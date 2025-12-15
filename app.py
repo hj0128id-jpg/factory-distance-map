@@ -1,6 +1,7 @@
 import streamlit as st
 import folium
 from streamlit_folium import st_folium
+from folium import Element
 import math
 
 # =================================================
@@ -15,7 +16,7 @@ if "selected_factory" not in st.session_state:
     st.session_state["selected_factory"] = None
 
 # =================================================
-# CSS (화이트 테마 강제 + UI)
+# CSS (화이트 테마 강제)
 # =================================================
 st.markdown("""
 <style>
@@ -63,20 +64,6 @@ div[data-testid="stCheckbox"] label span {
 .factory-list button:hover {
     background-color: #333;
 }
-
-/* 지도 하단 정보 카드 */
-.info-card {
-    background-color: #f8f9fa;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    padding: 16px;
-    margin-top: 12px;
-    font-size: 16px;
-}
-
-.info-card b {
-    font-size: 18px;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -96,7 +83,7 @@ def haversine_km(lat1, lon1, lat2, lon2):
     return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 # =================================================
-# Ducksan 공장
+# Ducksan
 # =================================================
 DUCKSAN = {
     "name": "Ducksan Factory",
@@ -105,7 +92,7 @@ DUCKSAN = {
 }
 
 # =================================================
-# 공장 데이터
+# 공장 데이터 (전체)
 # =================================================
 factories = [
     # Nike
@@ -151,7 +138,7 @@ with c2:
 
 visible = [
     f for f in factories
-    if (f[1]=="Nike" and show_nike) or (f[1]=="Adidas" and show_adidas)
+    if (f[1] == "Nike" and show_nike) or (f[1] == "Adidas" and show_adidas)
 ]
 
 selected = st.session_state["selected_factory"]
@@ -188,41 +175,53 @@ with col_map:
 
     for f in targets:
         fid, brand, name, lat, lon, eta = f
-        marker_color = "red" if brand == "Nike" else "green"
+        color = "red" if brand == "Nike" else "green"
         folium.Marker(
             [lat, lon],
             popup=f"<b>{name}</b><br>{brand}<br>{eta}",
-            icon=folium.Icon(color=marker_color)
+            icon=folium.Icon(color=color)
         ).add_to(m)
 
+    # 경로 + 정보 오버레이
     if selected:
+        dist = haversine_km(
+            DUCKSAN["lat"], DUCKSAN["lon"],
+            selected[3], selected[4]
+        )
+
         folium.PolyLine(
             [[DUCKSAN["lat"], DUCKSAN["lon"]], [selected[3], selected[4]]],
             color="black",
             weight=4
         ).add_to(m)
 
-    st_folium(
-        m,
-        height=1050,
-        width=1400,
-        key="map"
-    )
-
-    # 지도 하단 정보 카드
-    if selected:
-        dist = haversine_km(
-            DUCKSAN["lat"], DUCKSAN["lon"],
-            selected[3], selected[4]
-        )
-        st.markdown(f"""
-        <div class="info-card">
-            <b>{selected[2]}</b><br>
+        info_html = f"""
+        <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            background: rgba(255,255,255,0.95);
+            padding: 14px 18px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-size: 14px;
+            min-width: 240px;
+        ">
+            <b style="font-size:16px;">{selected[2]}</b><br>
             브랜드: {selected[1]}<br>
             거리: {dist:.1f} km<br>
             소요시간: {selected[5]}
         </div>
-        """, unsafe_allow_html=True)
+        """
+        m.get_root().html.add_child(Element(info_html))
+
+    st_folium(
+        m,
+        height=850,
+        width=1100,
+        key="map"
+    )
 
 # =================================================
 # 오른쪽 공장 리스트
