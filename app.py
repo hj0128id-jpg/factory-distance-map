@@ -1,178 +1,173 @@
-# app.py
 import streamlit as st
-import pandas as pd
-import pydeck as pdk
+import folium
+from streamlit_folium import st_folium
 import math
-import requests
 
-# ---------------- CONFIG ----------------
-st.set_page_config(page_title="Factory Distance Map", layout="wide")
+# ===============================
+# 페이지 설정 + 화이트 테마 강제
+# ===============================
+st.set_page_config(layout="wide", page_title="Factory Map")
 
-# 우리 공장 좌표 (출발지)
-MY_FACTORY = {
-    "name": "Our Factory (Ducksan)",
+st.markdown("""
+<style>
+body, .stApp {
+    background-color: white !important;
+    color: black !important;
+}
+.stCheckbox label {
+    color: black !important;
+    font-weight: 600;
+}
+.factory-item {
+    padding: 8px 6px;
+    border-bottom: 1px solid #ddd;
+    cursor: pointer;
+}
+.factory-item:hover {
+    background-color: #f2f2f2;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ===============================
+# 거리 계산 함수
+# ===============================
+def haversine_km(lat1, lon1, lat2, lon2):
+    R = 6371
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(math.radians(lat1))
+        * math.cos(math.radians(lat2))
+        * math.sin(dlon / 2) ** 2
+    )
+    return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+# ===============================
+# Ducksan 공장
+# ===============================
+DUCKSAN = {
+    "name": "Ducksan Factory",
     "lat": -6.385298062386163,
-    "lon": 107.24043447439371
+    "lon": 107.24043447439371,
 }
 
-# ----------------- 데이터 (원본명 그대로) -----------------
-# Shoes: Nike / Adidas (IY.PIC Nikomas appears in both)
-data_rows = [
-    # Nike block (from your table)
-    ("Nike", "IY.PIC Nikomas Nike, Adidas", -6.16276739755951, 106.31671924330799),
-    ("Nike", "IA.Adis", -6.198360928194161, 106.45490204318438),
-    ("Nike", "JV Victory", -6.177442951766401, 106.53013303741062),
-    ("Nike", "RH Ching Luh", -6.174073195725205, 106.53745401501386),
-    ("Nike", "IM KMK", -6.204102530389127, 106.50946954319025),
-    ("Nike", "IR Pratama", -6.2353570645495, 106.64156261937526),
-    ("Nike", "JJ Changshin", -6.3662150106528985, 107.3754476465168),
-    ("Nike", "TT Tekwang", -6.557840458416882, 107.78753277093949),
-    ("Nike", "J2 Shoetown", -6.668837588760989, 108.26586454850877),
-    ("Nike", "PM Sumber masanda", -6.867241347419877, 108.98398073674508),
-    ("Nike", "SCI Selalu Cinta", -7.3649526370117275, 110.50302727705107),
-    ("Nike", "RY.JJS Changshin", -7.074890966054376, 108.07273203695073),
-    ("Nike", "RY Pou Yuen", -6.803464029220425, 107.22441150566885),
-    ("Nike", "JX Pratama", -6.86320705203383, 107.02668764100862),
+# ===============================
+# 공장 데이터 (네가 준 그대로)
+# ===============================
+factories = [
+    # Nike
+    (1, "Nike", "IY.PIC Nikomas Nike, Adidas", -6.16276739755951, 106.31671924330799, "130 min (135km)"),
+    (2, "Nike", "IA.Adis", -6.198360928194161, 106.45490204318438, "120 min (117km)"),
+    (3, "Nike", "JV Victory", -6.177442951766401, 106.53013303741062, "130 min (121km)"),
+    (4, "Nike", "RH Ching Luh", -6.174073195725205, 106.53745401501386, "130 min (113km)"),
+    (5, "Nike", "IM KMK", -6.204102530389127, 106.50946954319025, "125 min (117km)"),
+    (6, "Nike", "IR Pratama", -6.2353570645495, 106.64156261937526, "97 min (96.2km)"),
+    (7, "Nike", "JJ Changshin", -6.3662150106528985, 107.3754476465168, "37 min (23.3km)"),
+    (8, "Nike", "TT Tekwang", -6.557840458416882, 107.78753277093949, "76 min (80km)"),
+    (9, "Nike", "J2 Shoetown", -6.668837588760989, 108.26586454850877, "124 min (150km)"),
+    (10, "Nike", "PM Sumber masanda", -6.867241347419877, 108.98398073674508, "180 min (234km)"),
+    (11, "Nike", "SCI Selalu Cinta", -7.3649526370117275, 110.50302727705107, "317 min (442km)"),
+    (12, "Nike", "RY.JJS Changshin", -7.074890966054376, 108.07273203695073, "160 min (152km)"),
+    (13, "Nike", "RY Pou Yuen", -6.803464029220425, 107.22441150566885, "128 min (72km)"),
+    (14, "Nike", "JX Pratama", -6.86320705203383, 107.02668764100862, "173 min (90km)"),
 
-    # Adidas block
-    ("Adidas", "PWI-1 Parkland", -6.18005569680193, 106.34344218683786),
-    ("Adidas", "IY.PIC Nikomas Nike, Adidas", -6.16276739755951, 106.31671924330799),  # same name appears in both
-    ("Adidas", "PRB Panarub", -6.170607657812733, 106.6191471209852),
-    ("Adidas", "PBB Bintang Indo", -6.867770507966313, 108.84263889750521),
-    ("Adidas", "SHI Tah Sung Hung", -6.929972278573358, 108.87605444522376),
-    ("Adidas", "HWI Hwa Seung", -6.712188897782861, 110.72403180338068),
-    ("Adidas", "PWI-3 Parkland", -6.634589345449244, 110.41133627660086),
-    ("Adidas", "PWI-4 Parkland", -6.7142319309820175, 111.38549046857136),
-    ("Adidas", "HWI-2 Hwa Seung", -6.712771739449992, 111.19681124717319),
-    ("Adidas", "PWi-5 Parkland", -6.709008772441859, 111.39741373178808),
-    ("Adidas", "PGS Pouchen", -6.875398775012465, 107.02241821336372),
-    ("Adidas", "PGD.PGD2 Glostar Newbal, Adidas", -6.974318300905597, 106.83196261494169),
+    # Adidas
+    (15, "Adidas", "PWI-1 Parkland", -6.18005569680193, 106.34344218683786, "420 min (487km)"),
+    (16, "Adidas", "IY.PIC Nikomas Nike, Adidas", -6.16276739755951, 106.31671924330799, "130 min (135km)"),
+    (17, "Adidas", "PRB Panarub", -6.170607657812733, 106.6191471209852, "105 min (107km)"),
+    (18, "Adidas", "PBB Bintang Indo", -6.867770507966313, 108.84263889750521, "167 min (207km)"),
+    (19, "Adidas", "SHI Tah Sung Hung", -6.929972278573358, 108.87605444522376, "167 min (220km)"),
+    (20, "Adidas", "HWI Hwa Seung", -6.712188897782861, 110.72403180338068, "360 min (455km)"),
+    (21, "Adidas", "PWI-3 Parkland", -6.867770507966313, 108.84263889750521, "312 min (416km)"),
+    (22, "Adidas", "PWI-4 Parkland", -6.7142319309820175, 111.38549046857136, "362 min (458km)"),
+    (23, "Adidas", "HWI-2 Hwa Seung", -6.712771739449992, 111.19681124717319, "420 min (500km)"),
+    (24, "Adidas", "PWi-5 Parkland", -6.709008772441859, 111.39741373178808, "447 min (522km)"),
+    (25, "Adidas", "PGS Pouchen", -6.875398775012465, 107.02241821336372, "180 min (93km)"),
+    (26, "Adidas", "PGD.PGD2 Glostar Newbal, Adidas", -6.974318300905597, 106.83196261494169, "153 min (138km)")
 ]
 
-df = pd.DataFrame(data_rows, columns=["brand", "name", "lat", "lon"])
+# ===============================
+# 브랜드 필터
+# ===============================
+col_a, col_b = st.columns(2)
+with col_a:
+    show_nike = st.checkbox("Nike", True)
+with col_b:
+    show_adidas = st.checkbox("Adidas", True)
 
-# ----------------- 사이드바: Google API 키 입력 (선택) -----------------
-st.sidebar.title("Settings")
-GOOGLE_API_KEY = st.sidebar.text_input("Google Distance Matrix API Key (optional)", type="password")
-avg_speed_kmh = st.sidebar.number_input("Average speed for ETA when API not set (km/h)", value=40.0, min_value=10.0)
+# ===============================
+# 레이아웃 (지도 | 리스트)
+# ===============================
+col_map, col_list = st.columns([4, 1])
 
-# ----------------- 상단: 로고 + 브랜드 선택 -----------------
-col_left, col_right = st.columns([1, 2])
-with col_left:
-    #st.image("company_logo.png", width=140)  # 파일명 바꿔도 됨
+# ===============================
+# 지도 생성
+# ===============================
+with col_map:
+    m = folium.Map(location=[-6.6, 108.2], zoom_start=7)
 
-with col_right:
-    st.markdown("## Client Factories — Shoes")
-    st.markdown("Select brand and a factory to see distance & ETA from our factory.")
+    # Ducksan
+    folium.CircleMarker(
+        [DUCKSAN["lat"], DUCKSAN["lon"]],
+        radius=8,
+        color="blue",
+        fill=True,
+        fill_color="blue",
+        popup=DUCKSAN["name"],
+    ).add_to(m)
 
-brand_choice = st.selectbox("Brand", ["Nike", "Adidas"])
+    # 공장 마커
+    visible_factories = []
+    for f in factories:
+        fid, brand, name, lat, lon, eta = f
+        if (brand == "Nike" and show_nike) or (brand == "Adidas" and show_adidas):
+            visible_factories.append(f)
+            folium.Marker(
+                [lat, lon],
+                popup=f"<b>{name}</b><br>{brand}<br>{eta}",
+                icon=folium.Icon(color="red"),
+            ).add_to(m)
 
-# filter by brand
-brand_df = df[df["brand"] == brand_choice].reset_index(drop=True)
+    map_state = st_folium(m, height=900, width=1100)
 
-st.write(f"### {brand_choice} factories ({len(brand_df)})")
-st.dataframe(brand_df[["name", "lat", "lon"]].rename(columns={"name":"Factory Name","lat":"LAT","lon":"LNG"}), height=250)
+# ===============================
+# 오른쪽 공장 리스트
+# ===============================
+with col_list:
+    st.markdown("### 공장 리스트")
 
-# ----------------- 공장 선택 인터페이스 -----------------
-selected_name = st.selectbox("Select a factory (click to show on map & calc distance):", brand_df["name"].tolist())
+    for f in visible_factories:
+        fid, brand, name, lat, lon, eta = f
 
-selected_row = brand_df[brand_df["name"] == selected_name].iloc[0]
-dest_lat, dest_lon = selected_row["lat"], selected_row["lon"]
+        if st.button(f"{brand} | {name}", key=f"btn_{fid}"):
+            dist = haversine_km(DUCKSAN["lat"], DUCKSAN["lon"], lat, lon)
 
-# ----------------- 거리 계산 함수 -----------------
-def haversine_km(lat1, lon1, lat2, lon2):
-    # returns distance in kilometers (great-circle)
-    R = 6371.0  # Earth radius in km
-    phi1 = math.radians(lat1)
-    phi2 = math.radians(lat2)
-    dphi = math.radians(lat2 - lat1)
-    dlambda = math.radians(lon2 - lon1)
-    a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-    return R * c
+            m2 = folium.Map(location=[lat, lon], zoom_start=8)
 
-def google_distance_matrix(api_key, origin_lat, origin_lon, dest_lat, dest_lon):
-    # returns (distance_text, distance_meters, duration_text, duration_seconds) or None on error
-    url = "https://maps.googleapis.com/maps/api/distancematrix/json"
-    params = {
-        "origins": f"{origin_lat},{origin_lon}",
-        "destinations": f"{dest_lat},{dest_lon}",
-        "key": api_key,
-        "mode": "driving",
-        "language": "en"
-    }
-    try:
-        resp = requests.get(url, params=params, timeout=10)
-        data = resp.json()
-        if data.get("status") == "OK" and data.get("rows"):
-            element = data["rows"][0]["elements"][0]
-            if element.get("status") == "OK":
-                dist_text = element["distance"]["text"]
-                dist_m = element["distance"]["value"]
-                dur_text = element["duration"]["text"]
-                dur_s = element["duration"]["value"]
-                return dist_text, dist_m, dur_text, dur_s
-    except Exception as e:
-        # fail silently to fallback
-        print("Google API error:", e)
-    return None
+            folium.CircleMarker(
+                [DUCKSAN["lat"], DUCKSAN["lon"]],
+                radius=8,
+                color="blue",
+                fill=True,
+                fill_color="blue",
+                popup=DUCKSAN["name"],
+            ).add_to(m2)
 
-# ----------------- 계산 및 출력 -----------------
-st.markdown("---")
-st.subheader("Selected Factory")
-st.write(f"**{selected_name}**  —  LAT: {dest_lat}, LNG: {dest_lon}")
+            folium.Marker(
+                [lat, lon],
+                popup=f"<b>{name}</b><br>{brand}<br>{eta}<br>{dist:.1f} km",
+                icon=folium.Icon(color="red"),
+            ).add_to(m2)
 
-# try Google first if key provided
-google_result = None
-if GOOGLE_API_KEY:
-    with st.spinner("Querying Google Distance Matrix..."):
-        google_result = google_distance_matrix(GOOGLE_API_KEY, MY_FACTORY["lat"], MY_FACTORY["lon"], dest_lat, dest_lon)
+            folium.PolyLine(
+                [[DUCKSAN["lat"], DUCKSAN["lon"]], [lat, lon]],
+                color="black",
+                weight=4,
+            ).add_to(m2)
 
-if google_result:
-    dist_text, dist_m, dur_text, dur_s = google_result
-    st.success("Distance & ETA (Google Distance Matrix)")
-    st.write(f"- Distance: **{dist_text}** ({dist_m/1000:.2f} km)")
-    st.write(f"- Estimated travel time: **{dur_text}** ({dur_s//60} min)")
-else:
-    # fallback: haversine + simple ETA estimate
-    dist_km = haversine_km(MY_FACTORY["lat"], MY_FACTORY["lon"], dest_lat, dest_lon)
-    eta_min = (dist_km / max(1e-6, avg_speed_kmh)) * 60.0
-    st.warning("Google API not used or failed — showing approximate (great-circle) distance & estimated time.")
-    st.write(f"- Approx distance (straight-line): **{dist_km:.2f} km**")
-    st.write(f"- Estimated travel time (at {avg_speed_kmh} km/h): **{eta_min:.0f} min**")
+            st.markdown(f"**거리:** {dist:.1f} km")
+            st.markdown(f"**소요시간:** {eta}")
 
-# ----------------- 지도: 우리공장 + 선택 공장 표시 -----------------
-map_df = pd.DataFrame([
-    {"name": MY_FACTORY["name"], "lat": MY_FACTORY["lat"], "lon": MY_FACTORY["lon"], "type": "Our Factory"},
-    {"name": selected_name, "lat": dest_lat, "lon": dest_lon, "type": "Client Factory"},
-])
-
-layer = pdk.Layer(
-    "ScatterplotLayer",
-    data=map_df,
-    get_position='[lon, lat]',
-    get_fill_color='[255, 0, 0] if type == "Our Factory" else [0, 120, 255]',
-    get_radius=300,
-    pickable=True,
-)
-
-# If Google returned a driving route (we didn't request route polyline here),
-# we still show two pins and a simple connecting line via PathLayer (straight)
-path_layer = pdk.Layer(
-    "PathLayer",
-    data=[{"path": [[MY_FACTORY["lon"], MY_FACTORY["lat"]], [dest_lon, dest_lat]], "name": "route"}],
-    get_path="path",
-    get_width=4,
-)
-
-view_state = pdk.ViewState(latitude=(MY_FACTORY["lat"]+dest_lat)/2, longitude=(MY_FACTORY["lon"]+dest_lon)/2, zoom=7)
-
-tooltip = {"html": "<b>{name}</b><br/>{type}", "style": {"color": "white"}}
-
-st.pydeck_chart(pdk.Deck(layers=[layer, path_layer], initial_view_state=view_state, tooltip=tooltip))
-
-# ----------------- 추가 정보 및 다운로드 -----------------
-st.markdown("---")
-st.write("You can download the current brand's factory list:")
-csv = brand_df.to_csv(index=False).encode("utf-8")
-st.download_button("Download CSV", csv, file_name=f"{brand_choice}_factories.csv", mime="text/csv")
+            st_folium(m2, height=900, width=1100)
