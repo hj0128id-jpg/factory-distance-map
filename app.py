@@ -9,7 +9,7 @@ import base64
 st.set_page_config(layout="wide", page_title="Factory Distance Map")
 
 if "selected_factory" not in st.session_state:
-    st.session_state["selected_factory"]
+    st.session_state["selected_factory"] = None
 
 # =================================================
 # 유틸
