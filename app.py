@@ -204,7 +204,7 @@ with col_list:
                 st.session_state["selected_factory"] = f
 
     unsafe_allow_html=True
-)
+
 
 st.markdown(
     "<script>window.scrollTo(0, 0);</script>",
