@@ -200,8 +200,12 @@ with col_list:
     st.markdown("### 공장 리스트")
     with st.container(height=750):
         for f in visible_factories:
-            if st.button(f"{f[1]} | {f[2]}", key=f"factory_{f[0]}"):
-                st.session_state["selected_factory"] = f
+    st.button(
+    f"{f[1]} | {f[2]}",
+    key=f"factory_{f[0]}",
+    on_click=select_factory,
+    args=(f,)
+)
 
     unsafe_allow_html=True
 
