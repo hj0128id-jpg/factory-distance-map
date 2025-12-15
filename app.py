@@ -3,45 +3,21 @@ import folium
 from streamlit_folium import st_folium
 from folium import Element
 import math
-import os
 import base64
 
 # =================================================
 # 페이지 설정
 # =================================================
-st.set_page_config(
-    layout="wide",
-    page_title="Factory Distance Map"
-)
+st.set_page_config(layout="wide", page_title="Factory Distance Map")
 
 # =================================================
-# 상태 초기화
+# 상태
 # =================================================
 if "selected_factory" not in st.session_state:
     st.session_state["selected_factory"] = None
 
 # =================================================
-# 이미지 → Base64
-# =================================================
-def img_to_base64(path):
-    if not os.path.exists(path):
-        return ""
-    with open(path, "rb") as f:
-        return base64.b64encode(f.read()).decode()
-
-LOGO_COMPANY = img_to_base64("company_logo.png")
-LOGO_NIKE = img_to_base64("logo_nike.png")
-LOGO_ADIDAS = img_to_base64("logo_adidas.png")
-
-def brand_logo_b64(brand):
-    if brand == "Nike":
-        return LOGO_NIKE
-    if brand == "Adidas":
-        return LOGO_ADIDAS
-    return ""
-
-# =================================================
-# CSS (화이트 테마 고정)
+# CSS (화이트 테마 강제)
 # =================================================
 st.markdown("""
 <style>
@@ -52,15 +28,8 @@ body, .stApp {
     color: black !important;
 }
 
-/* 타이틀 */
-.app-title {
-    font-size: 38px;
-    font-weight: 800;
-    margin-bottom: 20px;
-}
-
-/* 브랜드 선택 */
 .brand-title {
+    color: black !important;
     font-weight: 700;
     margin-bottom: 6px;
 }
@@ -70,12 +39,12 @@ div[data-testid="stCheckbox"] label span {
     font-weight: 600;
 }
 
-/* 오른쪽 공장 리스트 */
 .factory-list {
     background-color: #111;
     color: white;
     padding: 12px;
-    border-radius: 8px;
+    border-radius: 10px;
+    height: 100%;
 }
 
 .factory-list h3 {
@@ -98,21 +67,11 @@ div[data-testid="stCheckbox"] label span {
 """, unsafe_allow_html=True)
 
 # =================================================
-# 상단 헤더
+# 유틸
 # =================================================
-# 회사 로고 (제목 위)
-if LOGO_COMPANY:
-    st.markdown(
-        f"<img src='data:image/png;base64,{LOGO_COMPANY}' width='300' style='margin-bottom:25px;'>",
-        unsafe_allow_html=True
-    )
+def img_b64(path):
+    return base64.b64encode(open(path, "rb").read()).decode()
 
-# 타이틀
-st.markdown("<div class='app-title'>Factory Distance Map</div>", unsafe_allow_html=True)
-
-# =================================================
-# 거리 계산
-# =================================================
 def haversine_km(lat1, lon1, lat2, lon2):
     R = 6371
     dlat = math.radians(lat2 - lat1)
@@ -126,6 +85,19 @@ def haversine_km(lat1, lon1, lat2, lon2):
     return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 # =================================================
+# 상단 로고 + 타이틀
+# =================================================
+st.markdown(
+    f"""
+    <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+        <img src="data:image/png;base64,{img_b64('company_logo.png')}" height="46">
+        <h1 style="margin:0;">Factory Distance Map</h1>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# =================================================
 # Ducksan
 # =================================================
 DUCKSAN = {
@@ -135,7 +107,22 @@ DUCKSAN = {
 }
 
 # =================================================
-# 공장 데이터
+# 브랜드 로고
+# =================================================
+BRAND_LOGO = {
+    "Nike": "logo_nike.png",
+    "Adidas": "logo_adidas.png",
+    "New Balance": "logo_newbalance.png",
+    "Puma": "logo_puma.png",
+    "Under Armour": "logo_underarmour.png",
+    "Converse": "logo_converse.png",
+    "Decathlon": "logo_decathlon.png",
+    "Yonex": "logo_yonex.png",
+    "Sperry": "logo_sperry.png",
+}
+
+# =================================================
+# 공장 데이터 (전체)
 # =================================================
 factories = [
     # Nike
@@ -166,26 +153,46 @@ factories = [
     (23,"Adidas","HWI-2 Hwa Seung",-6.712771739449992,111.19681124717319,"420 min (500km)"),
     (24,"Adidas","PWi-5 Parkland",-6.709008772441859,111.39741373178808,"447 min (522km)"),
     (25,"Adidas","PGS Pouchen",-6.875398775012465,107.02241821336372,"180 min (93km)"),
-    (26,"Adidas","PGD.PGD2 Glostar Newbal, Adidas",-6.974318300905597,106.83196261494169,"153 min (138km)")
+    (26,"Adidas","PGD.PGD2 Glostar Newbal, Adidas",-6.974318300905597,106.83196261494169,"153 min (138km)"),
+
+    # New Balance
+    (27,"New Balance","PWI-2 Parkland",-6.164065615736655,106.34362393191581,"127 min (134km)"),
+    (28,"New Balance","MPI Metro Pearl",-6.553123695397186,107.43167326062274,"57 min (51km)"),
+    (29,"New Balance","PGD.PGD2 Glostar Newbal, Adidas",-6.974318300905597,106.83196261494169,"153 min (138km)"),
+
+    # Puma
+    (30,"Puma","IDM Diamond",-6.760451512559341,108.26909332164612,"124 min (151km)"),
+
+    # Under Armour
+    (31,"Under Armour","Dean Shoes",-6.391000160605475,107.39562888401743,"43 min (29km)"),
+    (32,"Under Armour","Long Rich",-6.8755937402321985,108.775905329925,"150 min (200km)"),
+
+    # Converse
+    (33,"Converse","SJI Shoenary",-7.369617174917486,110.22038960678333,"350 min (460km)"),
+
+    # Decathlon
+    (34,"Decathlon","DPS-2 Dwi Prima",-7.398359508521098,111.50982327782442,"398 min (567km)"),
+
+    # Yonex
+    (35,"Yonex","DPS Dwi Prima",-7.505210694143256,111.65093697468592,"405 min (591km)"),
+
+    # Sperry
+    (36,"Sperry","WWW Young Tree",-7.565685915234356,110.76484773866882,"360 min (482km)")
 ]
 
 # =================================================
 # 브랜드 선택
 # =================================================
 st.markdown("<div class='brand-title'>브랜드 선택</div>", unsafe_allow_html=True)
-
-b1, b2 = st.columns(2)
-with b1:
-    st.markdown(f"<img src='data:image/png;base64,{LOGO_NIKE}' width='70'>", unsafe_allow_html=True)
+c1, c2 = st.columns(2)
+with c1:
     show_nike = st.checkbox("Nike", True)
-
-with b2:
-    st.markdown(f"<img src='data:image/png;base64,{LOGO_ADIDAS}' width='70'>", unsafe_allow_html=True)
+with c2:
     show_adidas = st.checkbox("Adidas", True)
 
 visible = [
     f for f in factories
-    if (f[1] == "Nike" and show_nike) or (f[1] == "Adidas" and show_adidas)
+    if (f[1]=="Nike" and show_nike) or (f[1]=="Adidas" and show_adidas)
 ]
 
 selected = st.session_state["selected_factory"]
@@ -199,61 +206,61 @@ col_map, col_list = st.columns([4, 1])
 # 지도
 # =================================================
 with col_map:
-    m = folium.Map(
-        location=[-6.6, 108.2],
-        zoom_start=7
-    )
+    m = folium.Map(location=[-6.6,108.2], zoom_start=7, control_scale=False)
 
-    # Ducksan
     folium.CircleMarker(
         [DUCKSAN["lat"], DUCKSAN["lon"]],
         radius=8,
         color="blue",
         fill=True,
         fill_color="blue",
-        popup="Ducksan Factory"
+        popup=DUCKSAN["name"]
     ).add_to(m)
 
     targets = [selected] if selected else visible
 
     for f in targets:
-        fid, brand, name, lat, lon, eta = f
+        _, brand, name, lat, lon, eta = f
         folium.Marker(
             [lat, lon],
             popup=f"<b>{name}</b><br>{brand}<br>{eta}",
-            icon=folium.Icon(color="red" if brand=="Nike" else "green")
+            icon=folium.Icon(color="red")
         ).add_to(m)
 
     if selected:
-        dist = haversine_km(DUCKSAN["lat"], DUCKSAN["lon"], selected[3], selected[4])
-        logo = brand_logo_b64(selected[1])
+        _, brand, name, lat, lon, eta = selected
+        dist = haversine_km(DUCKSAN["lat"], DUCKSAN["lon"], lat, lon)
 
         folium.PolyLine(
-            [[DUCKSAN["lat"], DUCKSAN["lon"]],[selected[3], selected[4]]],
+            [[DUCKSAN["lat"], DUCKSAN["lon"]],[lat, lon]],
             color="black",
             weight=4
         ).add_to(m)
 
-        info_html = f"""
+        logo_html = ""
+        if brand in BRAND_LOGO:
+            logo_html = f"<img src='data:image/png;base64,{img_b64(BRAND_LOGO[brand])}' height='28'><br>"
+
+        info = f"""
         <div style="
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 9999;
-            background: rgba(255,255,255,0.95);
+            background: rgba(255,255,255,0.96);
             padding: 14px 18px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.18);
             min-width: 260px;
         ">
-            <img src="data:image/png;base64,{logo}" width="80"><br><br>
-            <b>{selected[2]}</b><br>
-            브랜드: {selected[1]}<br>
+            {logo_html}
+            <b style="font-size:16px;">{name}</b><br>
+            브랜드: {brand}<br>
             거리: {dist:.1f} km<br>
-            소요시간: {selected[5]}
+            소요시간: {eta}
         </div>
         """
-        m.get_root().html.add_child(Element(info_html))
+        m.get_root().html.add_child(Element(info))
 
     st_folium(m, height=700, width=1400, key="map")
 
