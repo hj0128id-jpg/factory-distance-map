@@ -11,7 +11,7 @@ import base64
 st.set_page_config(layout="wide", page_title="Factory Distance Map")
 
 # =================================================
-# 상태
+# 상태 초기화
 # =================================================
 if "selected_factory" not in st.session_state:
     st.session_state["selected_factory"] = None
@@ -67,10 +67,11 @@ div[data-testid="stCheckbox"] label span {
 """, unsafe_allow_html=True)
 
 # =================================================
-# 유틸
+# 유틸 함수
 # =================================================
 def img_b64(path):
-    return base64.b64encode(open(path, "rb").read()).decode()
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
 
 def haversine_km(lat1, lon1, lat2, lon2):
     R = 6371
@@ -85,7 +86,7 @@ def haversine_km(lat1, lon1, lat2, lon2):
     return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 # =================================================
-# 상단 로고 + 타이틀
+# 상단 회사 로고 + 타이틀
 # =================================================
 st.markdown(
     f"""
@@ -98,7 +99,7 @@ st.markdown(
 )
 
 # =================================================
-# Ducksan
+# Ducksan 공장
 # =================================================
 DUCKSAN = {
     "name": "Ducksan Factory",
@@ -155,28 +156,16 @@ factories = [
     (25,"Adidas","PGS Pouchen",-6.875398775012465,107.02241821336372,"180 min (93km)"),
     (26,"Adidas","PGD.PGD2 Glostar Newbal, Adidas",-6.974318300905597,106.83196261494169,"153 min (138km)"),
 
-    # New Balance
+    # Other brands
     (27,"New Balance","PWI-2 Parkland",-6.164065615736655,106.34362393191581,"127 min (134km)"),
     (28,"New Balance","MPI Metro Pearl",-6.553123695397186,107.43167326062274,"57 min (51km)"),
     (29,"New Balance","PGD.PGD2 Glostar Newbal, Adidas",-6.974318300905597,106.83196261494169,"153 min (138km)"),
-
-    # Puma
     (30,"Puma","IDM Diamond",-6.760451512559341,108.26909332164612,"124 min (151km)"),
-
-    # Under Armour
     (31,"Under Armour","Dean Shoes",-6.391000160605475,107.39562888401743,"43 min (29km)"),
     (32,"Under Armour","Long Rich",-6.8755937402321985,108.775905329925,"150 min (200km)"),
-
-    # Converse
     (33,"Converse","SJI Shoenary",-7.369617174917486,110.22038960678333,"350 min (460km)"),
-
-    # Decathlon
     (34,"Decathlon","DPS-2 Dwi Prima",-7.398359508521098,111.50982327782442,"398 min (567km)"),
-
-    # Yonex
     (35,"Yonex","DPS Dwi Prima",-7.505210694143256,111.65093697468592,"405 min (591km)"),
-
-    # Sperry
     (36,"Sperry","WWW Young Tree",-7.565685915234356,110.76484773866882,"360 min (482km)")
 ]
 
@@ -241,7 +230,7 @@ with col_map:
         if brand in BRAND_LOGO:
             logo_html = f"<img src='data:image/png;base64,{img_b64(BRAND_LOGO[brand])}' height='28'><br>"
 
-        info = f"""
+        info_html = f"""
         <div style="
             position: fixed;
             top: 20px;
@@ -260,7 +249,7 @@ with col_map:
             소요시간: {eta}
         </div>
         """
-        m.get_root().html.add_child(Element(info))
+        m.get_root().html.add_child(Element(info_html))
 
     st_folium(m, height=700, width=1400, key="map")
 
