@@ -4,7 +4,6 @@ from streamlit_folium import st_folium
 from folium import Element
 import math
 import base64
-from collections import defaultdict
 
 # =================================================
 # 페이지 설정
@@ -18,7 +17,7 @@ if "selected_factory" not in st.session_state:
     st.session_state["selected_factory"] = None
 
 # =================================================
-# CSS (화이트 테마 고정)
+# CSS (화이트 테마 + UI)
 # =================================================
 st.markdown("""
 <style>
@@ -32,17 +31,7 @@ body, .stApp {
 .brand-title {
     color: black !important;
     font-weight: 700;
-    margin-bottom: 6px;
-}
-
-.brand-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.brand-row img {
-    height: 20px;
+    margin-bottom: 8px;
 }
 
 div[data-testid="stCheckbox"] label span {
@@ -50,11 +39,14 @@ div[data-testid="stCheckbox"] label span {
     font-weight: 600;
 }
 
+/* 공장 리스트 박스 */
 .factory-list {
     background-color: #111;
     color: white;
     padding: 12px;
     border-radius: 10px;
+    height: 700px;
+    overflow-y: auto;
 }
 
 .factory-list h3 {
@@ -100,7 +92,7 @@ def haversine_km(lat1, lon1, lat2, lon2):
 # =================================================
 st.markdown(
     f"""
-    <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+    <div style="display:flex; align-items:center; gap:14px; margin-bottom:16px;">
         <img src="data:image/png;base64,{img_b64('company_logo.png')}" height="46">
         <h1 style="margin:0;">Factory Distance Map</h1>
     </div>
@@ -133,7 +125,7 @@ BRAND_LOGO = {
 }
 
 # =================================================
-# 공장 데이터 (네가 준 전체)
+# 공장 데이터 (전체)
 # =================================================
 factories = [
     (1,"Nike","IY.PIC Nikomas Nike, Adidas",-6.16276739755951,106.31671924330799,"130 min (135km)"),
@@ -175,7 +167,7 @@ factories = [
 ]
 
 # =================================================
-# 🔥 브랜드 선택 (전체 + 로고)
+# 브랜드 선택 (로고 + 체크박스 한 줄)
 # =================================================
 st.markdown("<div class='brand-title'>브랜드 선택</div>", unsafe_allow_html=True)
 
@@ -185,28 +177,25 @@ brand_state = {}
 cols = st.columns(4)
 for i, brand in enumerate(brands):
     with cols[i % 4]:
-        logo = BRAND_LOGO.get(brand)
-        if logo:
-            st.markdown(
-                f"""
-                <div class="brand-row">
-                    <img src="data:image/png;base64,{img_b64(logo)}">
-                    <span>{brand}</span>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        brand_state[brand] = st.checkbox(brand, True, key=f"chk_{brand}")
+        col_logo, col_chk = st.columns([1, 3])
+        with col_logo:
+            if brand in BRAND_LOGO:
+                st.markdown(
+                    f"<img src='data:image/png;base64,{img_b64(BRAND_LOGO[brand])}' height='22'>",
+                    unsafe_allow_html=True
+                )
+        with col_chk:
+            brand_state[brand] = st.checkbox(brand, True, key=f"chk_{brand}")
 
 visible = [f for f in factories if brand_state.get(f[1], False)]
 
 # =================================================
 # 레이아웃
 # =================================================
-col_map, col_list = st.columns([4,1])
+col_map, col_list = st.columns([4, 1])
 
 # =================================================
-# 지도 (이전과 동일)
+# 지도
 # =================================================
 with col_map:
     m = folium.Map(location=[-6.6,108.2], zoom_start=7)
@@ -235,21 +224,17 @@ with col_map:
             weight=4
         ).add_to(m)
 
-        logo_html = ""
-        if brand in BRAND_LOGO:
-            logo_html = f"<img src='data:image/png;base64,{img_b64(BRAND_LOGO[brand])}' height='28'><br>"
-
         m.get_root().html.add_child(Element(f"""
         <div style="
             position: fixed;
             top: 20px;
             right: 20px;
             background: white;
-            padding: 14px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            padding: 14px 18px;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+            min-width: 260px;
         ">
-            {logo_html}
             <b>{name}</b><br>
             브랜드: {brand}<br>
             거리: {dist:.1f} km<br>
@@ -260,7 +245,7 @@ with col_map:
     st_folium(m, height=700, width=1400)
 
 # =================================================
-# 오른쪽 공장 리스트
+# 오른쪽 공장 리스트 (박스 스크롤)
 # =================================================
 with col_list:
     st.markdown("<div class='factory-list'>", unsafe_allow_html=True)
