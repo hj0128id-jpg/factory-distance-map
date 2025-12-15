@@ -13,11 +13,9 @@ st.set_page_config(layout="wide", page_title="Factory Distance Map")
 # =================================================
 if "selected_factory" not in st.session_state:
     st.session_state["selected_factory"] = None
-if "search" not in st.session_state:
-    st.session_state["search"] = ""
 
 # =================================================
-# CSS
+# CSS (화이트 테마 강제 + UI)
 # =================================================
 st.markdown("""
 <style>
@@ -28,6 +26,7 @@ body, .stApp {
     color: black !important;
 }
 
+/* 브랜드 선택 */
 .brand-title {
     color: black !important;
     font-weight: 700;
@@ -39,7 +38,7 @@ div[data-testid="stCheckbox"] label span {
     font-weight: 600;
 }
 
-/* 오른쪽 리스트 */
+/* 오른쪽 공장 리스트 */
 .factory-list {
     background-color: #111;
     color: white;
@@ -52,24 +51,16 @@ div[data-testid="stCheckbox"] label span {
     color: white;
 }
 
-.factory-btn {
+.factory-list button {
     width: 100%;
     text-align: left;
-    padding: 8px;
-    border-radius: 6px;
+    color: white !important;
+    background-color: #1f1f1f;
     border: 1px solid #333;
     margin-bottom: 6px;
-    background-color: #1f1f1f;
-    color: white;
-    cursor: pointer;
 }
 
-.factory-btn.selected {
-    background-color: #2563eb;
-    border-color: #2563eb;
-}
-
-.factory-btn:hover {
+.factory-list button:hover {
     background-color: #333;
 }
 
@@ -82,6 +73,7 @@ div[data-testid="stCheckbox"] label span {
     margin-top: 12px;
     font-size: 16px;
 }
+
 .info-card b {
     font-size: 18px;
 }
@@ -104,7 +96,7 @@ def haversine_km(lat1, lon1, lat2, lon2):
     return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 # =================================================
-# Ducksan
+# Ducksan 공장
 # =================================================
 DUCKSAN = {
     "name": "Ducksan Factory",
@@ -142,13 +134,9 @@ with c1:
 with c2:
     show_adidas = st.checkbox("Adidas", True)
 
-# 검색
-st.session_state.search = st.text_input("공장 검색", st.session_state.search)
-
 visible = [
     f for f in factories
-    if ((f[1]=="Nike" and show_nike) or (f[1]=="Adidas" and show_adidas))
-    and st.session_state.search.lower() in f[2].lower()
+    if (f[1]=="Nike" and show_nike) or (f[1]=="Adidas" and show_adidas)
 ]
 
 selected = st.session_state["selected_factory"]
@@ -166,7 +154,7 @@ with col_map:
         center = [selected[3], selected[4]]
         zoom = 8
     else:
-        center = [-6.6,108.2]
+        center = [-6.6, 108.2]
         zoom = 7
 
     m = folium.Map(location=center, zoom_start=zoom)
@@ -185,21 +173,26 @@ with col_map:
 
     for f in targets:
         fid, brand, name, lat, lon, eta = f
-        color = "red" if brand == "Nike" else "green"
+        marker_color = "red" if brand == "Nike" else "green"
         folium.Marker(
             [lat, lon],
             popup=f"<b>{name}</b><br>{brand}<br>{eta}",
-            icon=folium.Icon(color=color)
+            icon=folium.Icon(color=marker_color)
         ).add_to(m)
 
     if selected:
         folium.PolyLine(
-            [[DUCKSAN["lat"], DUCKSAN["lon"]],[selected[3], selected[4]]],
+            [[DUCKSAN["lat"], DUCKSAN["lon"]], [selected[3], selected[4]]],
             color="black",
             weight=4
         ).add_to(m)
 
-    st_folium(m, height=800, key="map")
+    st_folium(
+        m,
+        height=850,
+        width=1100,
+        key="map"
+    )
 
     # 지도 하단 정보 카드
     if selected:
@@ -227,17 +220,8 @@ with col_list:
         st.session_state["selected_factory"] = None
 
     for f in visible:
-        selected_cls = "selected" if selected == f else ""
-        st.markdown(
-            f"""
-            <div class="factory-btn {selected_cls}"
-                 onclick="window.location.reload()">
-                {f[1]} | {f[2]}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        if st.button("select", key=f"btn_{f[0]}"):
+        fid, brand, name, lat, lon, eta = f
+        if st.button(f"{brand} | {name}", key=f"btn_{fid}"):
             st.session_state["selected_factory"] = f
 
     st.markdown("</div>", unsafe_allow_html=True)
