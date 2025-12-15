@@ -17,7 +17,7 @@ if "selected_factory" not in st.session_state:
     st.session_state["selected_factory"] = None
 
 # =================================================
-# CSS (화이트 테마 + UI)
+# CSS (화이트 테마 + 대시보드 고정 레이아웃)
 # =================================================
 st.markdown("""
 <style>
@@ -28,29 +28,32 @@ body, .stApp {
     color: black !important;
 }
 
+/* 브랜드 선택 제목 */
 .brand-title {
     color: black !important;
     font-weight: 700;
     margin-bottom: 8px;
 }
 
+/* 체크박스 글씨 */
 div[data-testid="stCheckbox"] label span {
     color: black !important;
     font-weight: 600;
 }
 
-/* 공장 리스트 박스 */
+/* 공장 리스트 박스 (지도와 높이 동일) */
 .factory-list {
     background-color: #111;
     color: white;
     padding: 12px;
     border-radius: 10px;
-    height: 700px;
-    overflow-y: auto;
+    height: 700px;          /* 🔥 지도 높이와 동일 */
+    overflow-y: auto;       /* 🔥 박스 내부 스크롤 */
 }
 
 .factory-list h3 {
     color: white;
+    margin-top: 0;
 }
 
 .factory-list button {
@@ -125,7 +128,7 @@ BRAND_LOGO = {
 }
 
 # =================================================
-# 공장 데이터 (전체)
+# 공장 데이터
 # =================================================
 factories = [
     (1,"Nike","IY.PIC Nikomas Nike, Adidas",-6.16276739755951,106.31671924330799,"130 min (135km)"),
@@ -245,7 +248,7 @@ with col_map:
     st_folium(m, height=700, width=1400)
 
 # =================================================
-# 오른쪽 공장 리스트 (박스 스크롤)
+# 오른쪽 공장 리스트 (지도 높이와 동일, 내부 스크롤)
 # =================================================
 with col_list:
     st.markdown("<div class='factory-list'>", unsafe_allow_html=True)
