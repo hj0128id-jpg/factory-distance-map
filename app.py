@@ -195,7 +195,15 @@ with col_map:
 
 # ================= 공장 리스트 =================
 with col_list:
-    st.markdown("### 공장 리스트")
+    h1, h2 = st.columns([3,1])
+
+    with h1:
+        st.markdown("### 공장 리스트")
+
+    with h2:
+        if st.button("새로 전체 보기"):
+            st.session_state["selected_factory"] = None
+
     with st.container(height=500):
         for f in visible_factories:
             st.button(
@@ -204,6 +212,7 @@ with col_list:
                 on_click=select_factory,
                 args=(f,)
             )
+
 
 # 스크롤 항상 맨 위
 st.markdown(
