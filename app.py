@@ -59,7 +59,7 @@ avg_speed_kmh = st.sidebar.number_input("Average speed for ETA when API not set 
 # ----------------- 상단: 로고 + 브랜드 선택 -----------------
 col_left, col_right = st.columns([1, 2])
 with col_left:
-    st.image("company_logo.png", width=140)  # 파일명 바꿔도 됨
+    #st.image("company_logo.png", width=140)  # 파일명 바꿔도 됨
 
 with col_right:
     st.markdown("## Client Factories — Shoes")
