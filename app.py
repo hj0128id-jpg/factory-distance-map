@@ -64,7 +64,15 @@ st.markdown(
     "<h1 style='margin-top:0; margin-bottom:20px;'>Factory Distance Map</h1>",
     unsafe_allow_html=True
 )
-
+st.markdown("""
+<style>
+/* 전체 선택 / 전체 해제 버튼만 작게 보이도록 */
+button {
+    font-size: 12px !important;
+    padding: 4px 10px !important;
+}
+</style>
+""", unsafe_allow_html=True)
 # =================================================
 # 브랜드 선택 + 전체 선택/해제 (로고 제거 버전)
 # =================================================
