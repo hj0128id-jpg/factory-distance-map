@@ -19,7 +19,11 @@ def img_b64(path):
         return base64.b64encode(f.read()).decode()
 
 def select_factory(factory):
-    st.session_state["selected_factory"] = factory
+    st.session_state["selected_factory"] = 
+
+def reset_view():
+    st.session_state["selected_factory"] = None
+
 
 # =================================================
 # 🔴 우리 공장 (고정 좌표)
@@ -201,8 +205,11 @@ with col_list:
         st.markdown("### 공장 리스트")
 
     with h2:
-        if st.button("🔄", help="전체 공장 다시 보기"):
-            st.session_state["selected_factory"] = None
+        st.button(
+    "🔄",
+    help="전체 공장 다시 보기",
+    on_click=reset_view
+)
 
 
     with st.container(height=500):
