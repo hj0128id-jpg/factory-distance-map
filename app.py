@@ -19,7 +19,7 @@ def img_b64(path):
         return base64.b64encode(f.read()).decode()
 
 def select_factory(factory):
-    st.session_state["selected_factory"]
+    st.session_state["selected_factory"] = factory
 
 def reset_view():
     st.session_state["selected_factory"] = None
