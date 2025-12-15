@@ -8,10 +8,7 @@ import base64
 # =================================================
 # 페이지 설정
 # =================================================
-st.set_page_config(
-    layout="wide",
-    page_title="Factory Distance Map"
-)
+st.set_page_config(layout="wide", page_title="Factory Distance Map")
 
 # =================================================
 # 상태
@@ -20,43 +17,7 @@ if "selected_factory" not in st.session_state:
     st.session_state["selected_factory"] = None
 
 # =================================================
-# 유틸
-# =================================================
-def img_to_base64(path):
-    with open(path, "rb") as f:
-        return base64.b64encode(f.read()).decode()
-
-def haversine_km(lat1, lon1, lat2, lon2):
-    R = 6371
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-    a = (
-        math.sin(dlat / 2) ** 2
-        + math.cos(math.radians(lat1))
-        * math.cos(math.radians(lat2))
-        * math.sin(dlon / 2) ** 2
-    )
-    return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
-# =================================================
-# 로고 (⚠️ 전부 소문자 파일명)
-# =================================================
-COMPANY_LOGO = img_to_base64("company_logo.png")
-
-BRAND_LOGOS = {
-    "Nike": img_to_base64("logo_nike.png"),
-    "Adidas": img_to_base64("logo_adidas.png"),
-    "New Balance": img_to_base64("logo_newbalance.png"),
-    "Puma": img_to_base64("logo_puma.png"),
-    "Under Armour": img_to_base64("logo_underarmour.png"),
-    "Converse": img_to_base64("logo_converse.png"),
-    "Decathlon": img_to_base64("logo_decathlon.png"),
-    "Yonex": img_to_base64("logo_yonex.png"),
-    "Sperry": img_to_base64("logo_sperry.png"),
-}
-
-# =================================================
-# CSS (화이트 테마 + 리스트 스크롤)
+# CSS (화이트 테마 + 스크롤 리스트)
 # =================================================
 st.markdown("""
 <style>
@@ -67,35 +28,46 @@ body, .stApp {
     color: black !important;
 }
 
-.brand-box {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.brand-title {
+    font-weight: 700;
+    margin: 10px 0;
 }
 
-.factory-list {
-    background: #111;
-    color: white;
-    padding: 12px;
-    border-radius: 10px;
-    height: 700px;
+.factory-scroll {
+    max-height: 300px;
     overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    background: #fafafa;
 }
 
-.factory-list button {
+.factory-scroll button {
     width: 100%;
     text-align: left;
-    color: white !important;
-    background: #1f1f1f;
-    border: 1px solid #333;
     margin-bottom: 6px;
-}
-
-.factory-list button:hover {
-    background: #333;
 }
 </style>
 """, unsafe_allow_html=True)
+
+# =================================================
+# 유틸
+# =================================================
+def haversine_km(lat1, lon1, lat2, lon2):
+    R = 6371
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dlat/2)**2 +
+        math.cos(math.radians(lat1)) *
+        math.cos(math.radians(lat2)) *
+        math.sin(dlon/2)**2
+    )
+    return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+def img_b64(path):
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
 
 # =================================================
 # Ducksan
@@ -107,7 +79,22 @@ DUCKSAN = {
 }
 
 # =================================================
-# 공장 데이터 (36개 전부)
+# 브랜드 로고
+# =================================================
+BRAND_LOGO = {
+    "Nike": img_b64("logo_nike.png"),
+    "Adidas": img_b64("logo_adidas.png"),
+    "New Balance": img_b64("logo_newbalance.png"),
+    "Puma": img_b64("logo_puma.png"),
+    "Converse": img_b64("logo_converse.png"),
+    "Decathlon": img_b64("logo_decathlon.png"),
+    "Under Armour": img_b64("logo_underarmour.png"),
+    "Yonex": img_b64("logo_yonex.png"),
+    "Sperry": img_b64("logo_sperry.png"),
+}
+
+# =================================================
+# 공장 데이터 (전체)
 # =================================================
 factories = [
     (1,"Nike","IY.PIC Nikomas Nike, Adidas",-6.16276739755951,106.31671924330799,"130 min (135km)"),
@@ -147,101 +134,89 @@ factories = [
     (33,"Converse","SJI Shoenary",-7.369617174917486,110.22038960678333,"350 min (460km)"),
     (34,"Decathlon","DPS-2 Dwi Prima",-7.398359508521098,111.50982327782442,"398 min (567km)"),
     (35,"Yonex","DPS Dwi Prima",-7.505210694143256,111.65093697468592,"405 min (591km)"),
-    (36,"Sperry","WWW Young Tree",-7.565685915234356,110.76484773866882,"360 min (482km)")
+    (36,"Sperry","WWW Young Tree",-7.565685915234356,110.76484773866882,"360 min (482km)"),
 ]
 
 # =================================================
-# 헤더
+# 지도 (고정 중심 / 자동 줌 없음)
 # =================================================
-st.markdown(
-    f"""
-    <div style="display:flex;align-items:center;gap:16px;">
-        <img src="data:image/png;base64,{COMPANY_LOGO}" height="60">
-        <h1>Factory Distance Map</h1>
-    </div>
-    """,
-    unsafe_allow_html=True
+m = folium.Map(
+    location=[-6.6, 108.2],
+    zoom_start=7,
+    control_scale=False
 )
 
-# =================================================
-# 브랜드 선택 (로고 + 체크박스)
-# =================================================
-brands = sorted(set([f[1] for f in factories]))
-brand_flags = {}
+# Ducksan
+folium.CircleMarker(
+    [DUCKSAN["lat"], DUCKSAN["lon"]],
+    radius=8,
+    color="blue",
+    fill=True,
+    fill_color="blue",
+    popup="Ducksan Factory"
+).add_to(m)
 
-cols = st.columns(len(brands))
-for i, b in enumerate(brands):
-    with cols[i]:
-        st.markdown(
-            f"""
-            <div class="brand-box">
-                <img src="data:image/png;base64,{BRAND_LOGOS[b]}" height="28">
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        brand_flags[b] = st.checkbox(b, True)
+selected = st.session_state["selected_factory"]
 
-visible = [f for f in factories if brand_flags[f[1]]]
-
-# =================================================
-# 레이아웃
-# =================================================
-col_map, col_list = st.columns([4,1])
-
-# =================================================
-# 지도
-# =================================================
-with col_map:
-    m = folium.Map(location=[-6.6,108.2], zoom_start=7)
-
-    folium.CircleMarker(
-        [DUCKSAN["lat"], DUCKSAN["lon"]],
-        radius=8,
-        color="blue",
-        fill=True,
-        fill_color="blue"
+# 공장 마커
+targets = [selected] if selected else factories
+for f in targets:
+    _, brand, name, lat, lon, eta = f
+    folium.Marker(
+        [lat, lon],
+        popup=f"<b>{name}</b><br>{brand}<br>{eta}",
+        icon=folium.Icon(color="red")
     ).add_to(m)
 
-    targets = [st.session_state["selected_factory"]] if st.session_state["selected_factory"] else visible
+# 선택 시 라인 + 정보 카드
+if selected:
+    dist = haversine_km(
+        DUCKSAN["lat"], DUCKSAN["lon"],
+        selected[3], selected[4]
+    )
 
-    for f in targets:
-        folium.Marker([f[3], f[4]], popup=f"{f[2]}<br>{f[5]}").add_to(m)
+    folium.PolyLine(
+        [[DUCKSAN["lat"], DUCKSAN["lon"]], [selected[3], selected[4]]],
+        color="black",
+        weight=4
+    ).add_to(m)
 
-    if st.session_state["selected_factory"]:
-        f = st.session_state["selected_factory"]
-        dist = haversine_km(DUCKSAN["lat"], DUCKSAN["lon"], f[3], f[4])
-        logo = BRAND_LOGOS[f[1]]
+    logo = BRAND_LOGO.get(selected[1], "")
+    info_html = f"""
+    <div style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        padding: 14px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 9999;
+        min-width: 240px;
+    ">
+        <img src="data:image/png;base64,{logo}" style="height:40px;"><br><br>
+        <b>{selected[2]}</b><br>
+        브랜드: {selected[1]}<br>
+        거리: {dist:.1f} km<br>
+        소요시간: {selected[5]}
+    </div>
+    """
+    m.get_root().html.add_child(Element(info_html))
 
-        folium.PolyLine(
-            [[DUCKSAN["lat"], DUCKSAN["lon"]],[f[3], f[4]]],
-            color="black", weight=4
-        ).add_to(m)
-
-        m.get_root().html.add_child(Element(f"""
-        <div style="position:fixed;top:20px;right:20px;
-        background:white;padding:14px;border-radius:10px;
-        box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:9999;">
-            <img src="data:image/png;base64,{logo}" height="40"><br><br>
-            <b>{f[2]}</b><br>
-            브랜드: {f[1]}<br>
-            거리: {dist:.1f} km<br>
-            소요시간: {f[5]}
-        </div>
-        """))
-
-    st_folium(m, height=700, width=1400)
+st_folium(m, height=700, width=1400)
 
 # =================================================
-# 공장 리스트
+# 공장 리스트 (Scrollable)
 # =================================================
-with col_list:
-    st.markdown('<div class="factory-list">', unsafe_allow_html=True)
-    if st.button("전체 공장 보기"):
-        st.session_state["selected_factory"] = None
+st.markdown("### 공장 리스트")
 
-    for f in visible:
-        if st.button(f"{f[1]} | {f[2]}", key=f"btn_{f[0]}"):
-            st.session_state["selected_factory"] = f
+st.markdown('<div class="factory-scroll">', unsafe_allow_html=True)
 
-    st.markdown("</div>", unsafe_allow_html=True)
+if st.button("전체 공장 보기"):
+    st.session_state["selected_factory"] = None
+
+for f in factories:
+    if st.button(f"{f[1]} | {f[2]}", key=f"factory_{f[0]}"):
+        st.session_state["selected_factory"] = f
+
+st.markdown("</div>", unsafe_allow_html=True)
