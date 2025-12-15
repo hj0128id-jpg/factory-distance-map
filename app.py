@@ -100,15 +100,15 @@ div[data-testid="stCheckbox"] label span {
 # =================================================
 # 상단 헤더
 # =================================================
-st.markdown("<div class='app-title'>Factory Distance Map</div>", unsafe_allow_html=True)
-
+# 회사 로고 (제목 위)
 if LOGO_COMPANY:
     st.markdown(
-        f"<img src='data:image/png;base64,{LOGO_COMPANY}' width='180'>",
+        f"<img src='data:image/png;base64,{LOGO_COMPANY}' width='180' style='margin-bottom:10px;'>",
         unsafe_allow_html=True
     )
 
-st.markdown("---")
+# 타이틀
+st.markdown("<div class='app-title'>Factory Distance Map</div>", unsafe_allow_html=True)
 
 # =================================================
 # 거리 계산
