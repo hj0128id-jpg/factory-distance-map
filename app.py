@@ -207,11 +207,7 @@ with col_list:
 )
 
 st.markdown(
-    """
-    <script>
-    window.scrollTo(0, 0);
-    </script>
-    """,
+    "<script>window.scrollTo(0, 0);</script>",
     unsafe_allow_html=True
 )
 
