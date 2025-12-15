@@ -15,15 +15,21 @@ if "selected_factory" not in st.session_state:
     st.session_state["selected_factory"] = None
 
 # =================================================
-# CSS (색상 완전 분리)
+# CSS (체크박스 글씨 포함 완전 수정)
 # =================================================
 st.markdown("""
 <style>
-/* 전체 화이트 테마 */
+/* ===============================
+   전체 화이트 테마
+=============================== */
 body, .stApp {
     background-color: white !important;
     color: black !important;
 }
+
+/* ===============================
+   브랜드 선택 영역
+=============================== */
 
 /* 브랜드 선택 제목 */
 .brand-title {
@@ -32,13 +38,15 @@ body, .stApp {
     margin-bottom: 6px;
 }
 
-/* 체크박스 라벨 */
-.stCheckbox label {
+/* 🔥 체크박스 텍스트 (Nike / Adidas) - 핵심 */
+div[data-testid="stCheckbox"] label span {
     color: black !important;
     font-weight: 600;
 }
 
-/* 오른쪽 공장 리스트 박스 */
+/* ===============================
+   오른쪽 공장 리스트
+=============================== */
 .factory-list {
     background-color: #111111;
     color: white !important;
@@ -47,7 +55,7 @@ body, .stApp {
     height: 100%;
 }
 
-/* 공장 리스트 제목 */
+/* 리스트 제목 */
 .factory-list h3 {
     color: white !important;
 }
@@ -128,7 +136,7 @@ factories = [
 ]
 
 # =================================================
-# 브랜드 필터
+# 브랜드 선택
 # =================================================
 st.markdown("<div class='brand-title'>브랜드 선택</div>", unsafe_allow_html=True)
 c1, c2 = st.columns(2)
@@ -165,9 +173,9 @@ with col_map:
         popup=DUCKSAN["name"]
     ).add_to(m)
 
-    draw_targets = [selected] if selected else visible
+    targets = [selected] if selected else visible
 
-    for f in draw_targets:
+    for f in targets:
         fid, brand, name, lat, lon, eta = f
         folium.Marker(
             [lat, lon],
