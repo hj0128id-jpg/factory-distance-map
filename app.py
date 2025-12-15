@@ -9,7 +9,13 @@ import math
 st.set_page_config(layout="wide", page_title="Factory Distance Map")
 
 # =================================================
-# CSS (색상 분리)
+# 상태 초기화
+# =================================================
+if "selected_factory" not in st.session_state:
+    st.session_state["selected_factory"] = None
+
+# =================================================
+# CSS (색상 완전 분리)
 # =================================================
 st.markdown("""
 <style>
@@ -19,19 +25,31 @@ body, .stApp {
     color: black !important;
 }
 
-/* 체크박스 라벨만 검정 */
+/* 브랜드 선택 제목 */
+.brand-title {
+    color: black !important;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+/* 체크박스 라벨 */
 .stCheckbox label {
     color: black !important;
     font-weight: 600;
 }
 
-/* 오른쪽 공장 리스트 영역 */
+/* 오른쪽 공장 리스트 박스 */
 .factory-list {
-    background-color: #1f1f1f;
-    color: white;
+    background-color: #111111;
+    color: white !important;
     padding: 12px;
     border-radius: 8px;
     height: 100%;
+}
+
+/* 공장 리스트 제목 */
+.factory-list h3 {
+    color: white !important;
 }
 
 /* 공장 버튼 */
@@ -39,12 +57,13 @@ body, .stApp {
     width: 100%;
     text-align: left;
     color: white !important;
-    background-color: #2b2b2b;
-    border: 1px solid #3a3a3a;
+    background-color: #1f1f1f;
+    border: 1px solid #333;
     margin-bottom: 6px;
 }
+
 .factory-list button:hover {
-    background-color: #3a3a3a;
+    background-color: #333333;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -111,12 +130,19 @@ factories = [
 # =================================================
 # 브랜드 필터
 # =================================================
-st.markdown("### 브랜드 선택")
+st.markdown("<div class='brand-title'>브랜드 선택</div>", unsafe_allow_html=True)
 c1, c2 = st.columns(2)
 with c1:
     show_nike = st.checkbox("Nike", True)
 with c2:
     show_adidas = st.checkbox("Adidas", True)
+
+visible = [
+    f for f in factories
+    if (f[1]=="Nike" and show_nike) or (f[1]=="Adidas" and show_adidas)
+]
+
+selected = st.session_state["selected_factory"]
 
 # =================================================
 # 레이아웃
@@ -124,11 +150,12 @@ with c2:
 col_map, col_list = st.columns([4, 1])
 
 # =================================================
-# 지도 (기본)
+# 지도
 # =================================================
 with col_map:
-    base_map = folium.Map(location=[-6.6,108.2], zoom_start=7)
+    m = folium.Map(location=[-6.6,108.2], zoom_start=7)
 
+    # Ducksan
     folium.CircleMarker(
         [DUCKSAN["lat"], DUCKSAN["lon"]],
         radius=8,
@@ -136,59 +163,49 @@ with col_map:
         fill=True,
         fill_color="blue",
         popup=DUCKSAN["name"]
-    ).add_to(base_map)
+    ).add_to(m)
 
-    visible = []
-    for f in factories:
+    draw_targets = [selected] if selected else visible
+
+    for f in draw_targets:
         fid, brand, name, lat, lon, eta = f
-        if (brand=="Nike" and show_nike) or (brand=="Adidas" and show_adidas):
-            visible.append(f)
-            folium.Marker(
-                [lat, lon],
-                popup=f"<b>{name}</b><br>{brand}<br>{eta}",
-                icon=folium.Icon(color="red")
-            ).add_to(base_map)
+        folium.Marker(
+            [lat, lon],
+            popup=f"<b>{name}</b><br>{brand}<br>{eta}",
+            icon=folium.Icon(color="red")
+        ).add_to(m)
 
-    st_folium(base_map, height=900, width=1100, key="map_base")
+    if selected:
+        fid, brand, name, lat, lon, eta = selected
+        folium.PolyLine(
+            [[DUCKSAN["lat"], DUCKSAN["lon"]],[lat, lon]],
+            color="black",
+            weight=4
+        ).add_to(m)
+
+    st_folium(m, height=900, width=1100, key="map")
 
 # =================================================
 # 오른쪽 공장 리스트
 # =================================================
 with col_list:
     st.markdown("<div class='factory-list'>", unsafe_allow_html=True)
-    st.markdown("### 공장 리스트")
+    st.markdown("<h3>공장 리스트</h3>", unsafe_allow_html=True)
+
+    if st.button("전체 공장 보기"):
+        st.session_state["selected_factory"] = None
 
     for f in visible:
         fid, brand, name, lat, lon, eta = f
-
         if st.button(f"{brand} | {name}", key=f"btn_{fid}"):
-            dist = haversine_km(DUCKSAN["lat"], DUCKSAN["lon"], lat, lon)
+            st.session_state["selected_factory"] = f
 
-            m2 = folium.Map(location=[lat, lon], zoom_start=8)
-
-            folium.CircleMarker(
-                [DUCKSAN["lat"], DUCKSAN["lon"]],
-                radius=8,
-                color="blue",
-                fill=True,
-                fill_color="blue"
-            ).add_to(m2)
-
-            folium.Marker(
-                [lat, lon],
-                popup=f"<b>{name}</b><br>{brand}<br>{eta}<br>{dist:.1f} km",
-                icon=folium.Icon(color="red")
-            ).add_to(m2)
-
-            folium.PolyLine(
-                [[DUCKSAN["lat"], DUCKSAN["lon"]],[lat, lon]],
-                color="black",
-                weight=4
-            ).add_to(m2)
-
-            st.markdown(f"**거리:** {dist:.1f} km")
-            st.markdown(f"**소요시간:** {eta}")
-
-            st_folium(m2, height=900, width=1100, key=f"map_{fid}")
+    if selected:
+        dist = haversine_km(
+            DUCKSAN["lat"], DUCKSAN["lon"],
+            selected[3], selected[4]
+        )
+        st.markdown(f"**거리:** {dist:.1f} km")
+        st.markdown(f"**소요시간:** {selected[5]}")
 
     st.markdown("</div>", unsafe_allow_html=True)
