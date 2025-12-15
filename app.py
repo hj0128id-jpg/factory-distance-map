@@ -52,7 +52,7 @@ brand_logos = {
 st.markdown(
     f"""
     <div style="margin-bottom:10px;">
-        <img src="data:image/png;base64,{company_logo}" height="60">
+        <img src="data:image/png;base64,{company_logo}" height="30">
     </div>
     """,
     unsafe_allow_html=True
