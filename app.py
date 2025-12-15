@@ -68,7 +68,7 @@ st.markdown("""
 <style>
 /* 전체 선택 / 전체 해제 버튼만 작게 보이도록 */
 button {
-    font-size: 12px !important;
+    font-size: 8px !important;
     padding: 4px 10px !important;
 }
 </style>
