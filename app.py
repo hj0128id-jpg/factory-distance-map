@@ -2,13 +2,38 @@ import streamlit as st
 import folium
 from streamlit_folium import st_folium
 import base64
+import math
 
+# =================================================
+# 기본 설정
+# =================================================
 st.set_page_config(layout="wide", page_title="Factory Distance Map")
 
+if "selected_factory" not in st.session_state:
+    st.session_state["selected_factory"] = None
+
+# =================================================
+# 유틸
+# =================================================
 def img_b64(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
+def haversine_km(lat1, lon1, lat2, lon2):
+    R = 6371
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dlat / 2) ** 2 +
+        math.cos(math.radians(lat1)) *
+        math.cos(math.radians(lat2)) *
+        math.sin(dlon / 2) ** 2
+    )
+    return round(2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a)), 1)
+
+# =================================================
+# 로고
+# =================================================
 company_logo = img_b64("company_logo.png")
 
 brand_logos = {
@@ -23,24 +48,74 @@ brand_logos = {
     "Sperry": "logo_sperry.png",
 }
 
+# =================================================
+# CSS
+# =================================================
+st.markdown("""
+<style>
+body, .stApp { background-color:white; color:black; }
+
+.factory-list {
+    height:700px;
+    overflow-y:auto;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:10px;
+}
+
+.factory-list button {
+    width:100%;
+    text-align:left;
+    margin-bottom:6px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# =================================================
+# 헤더
+# =================================================
 st.markdown(
     f"""
-    <div style="display:flex; align-items:center; gap:20px;">
-        <img src="data:image/png;base64,{company_logo}" height="40">
-        <h1 style="margin:10px;">Factory Distance Map</h1>
+    <div style="display:flex;align-items:center;gap:20px;margin-bottom:20px;">
+        <img src="data:image/png;base64,{company_logo}" height="60">
+        <h1 style="margin:0;">Factory Distance Map</h1>
     </div>
     """,
     unsafe_allow_html=True
 )
 
+# =================================================
+# 브랜드 선택 + 전체 선택/해제
+# =================================================
 st.markdown("### 브랜드 선택")
+
+btn1, btn2, _ = st.columns([1,1,6])
+
+with btn1:
+    if st.button("전체 선택"):
+        for b in brand_logos:
+            st.session_state[f"brand_{b}"] = True
+
+with btn2:
+    if st.button("전체 해제"):
+        for b in brand_logos:
+            st.session_state[f"brand_{b}"] = False
+
 brand_checks = {}
 cols = st.columns(5)
+
 for i, (brand, logo) in enumerate(brand_logos.items()):
     with cols[i % 5]:
         st.image(logo, width=70)
-        brand_checks[brand] = st.checkbox(brand, True)
+        brand_checks[brand] = st.checkbox(
+            brand,
+            key=f"brand_{brand}",
+            value=st.session_state.get(f"brand_{brand}", True)
+        )
 
+# =================================================
+# 공장 데이터 (원본 그대로)
+# =================================================
 factories = [
     (1,"Nike","IY.PIC Nikomas Nike, Adidas",-6.16276739755951,106.31671924330799,"130 min (135km)"),
     (2,"Nike","IA.Adis",-6.198360928194161,106.45490204318438,"120 min (117km)"),
@@ -83,26 +158,56 @@ factories = [
     (36,"Sperry","WWW Young Tree",-7.565685915234356,110.76484773866882,"360 min (482km)")
 ]
 
-visible = [f for f in factories if brand_checks.get(f[1], False)]
+visible_factories = [f for f in factories if brand_checks.get(f[1], False)]
 
 # =================================================
-# 핵심 레이아웃 (여기서 끝남)
+# 메인 레이아웃
 # =================================================
-col_map, col_list = st.columns([4, 1])
+col_map, col_list = st.columns([4,1])
 
+# ================= 지도 =================
 with col_map:
+    # 선택 공장 정보 박스
+    if st.session_state["selected_factory"]:
+        sf = st.session_state["selected_factory"]
+        st.info(
+            f"**선택 공장**\n\n- 브랜드: {sf[1]}\n- 공장명: {sf[2]}"
+        )
+
     m = folium.Map(location=[-6.6,108.2], zoom_start=7)
-    for f in visible:
+
+    # 일반 마커
+    for f in visible_factories:
+        folium.Marker([f[3], f[4]], popup=f"{f[2]}").add_to(m)
+
+    # 선택 공장 + 거리선
+    sf = st.session_state["selected_factory"]
+    if sf:
         folium.Marker(
-            [f[3], f[4]],
-            popup=f"{f[2]}<br>{f[5]}"
+            [sf[3], sf[4]],
+            icon=folium.Icon(color="red", icon="star"),
+            popup=sf[2]
         ).add_to(m)
+
+        for f in visible_factories:
+            if f[0] == sf[0]:
+                continue
+            dist = haversine_km(sf[3], sf[4], f[3], f[4])
+            folium.PolyLine(
+                [[sf[3], sf[4]],[f[3], f[4]]],
+                tooltip=f"{dist} km",
+                color="blue"
+            ).add_to(m)
+
     st_folium(m, height=700, width=1400)
 
+# ================= 공장 리스트 =================
 with col_list:
     st.markdown("### 공장 리스트")
+    st.markdown('<div class="factory-list">', unsafe_allow_html=True)
 
-    # ✅ 이게 핵심
-    with st.container(height=700):
-        for f in visible:
-            st.button(f"{f[1]} | {f[2]}", key=f"f_{f[0]}")
+    for f in visible_factories:
+        if st.button(f"{f[1]} | {f[2]}", key=f"factory_{f[0]}"):
+            st.session_state["selected_factory"] = f
+
+    st.markdown("</div>", unsafe_allow_html=True)
