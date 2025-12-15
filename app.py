@@ -54,9 +54,9 @@ body, .stApp {
 
 /* 타이틀 */
 .app-title {
-    font-size: 32px;
+    font-size: 38px;
     font-weight: 800;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 
 /* 브랜드 선택 */
