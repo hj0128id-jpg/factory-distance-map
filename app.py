@@ -202,3 +202,15 @@ with col_list:
         for f in visible_factories:
             if st.button(f"{f[1]} | {f[2]}", key=f"factory_{f[0]}"):
                 st.session_state["selected_factory"] = f
+
+st.markdown(
+    """
+    <script>
+    window.addEventListener("load", function() {
+        window.scrollTo({ top: 0, behavior: "auto" });
+    });
+    </script>
+    """,
+    unsafe_allow_html=True
+)
+
