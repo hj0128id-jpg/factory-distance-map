@@ -53,7 +53,7 @@ brand_logos = {
 # =================================================
 st.markdown("""
 <style>
-body, .stApp { background-color:white; color:black; }
+body, .stApp { background:white; color:black; }
 
 .factory-list {
     height:700px;
@@ -63,9 +63,9 @@ body, .stApp { background-color:white; color:black; }
     padding:10px;
 }
 
-.factory-list button {
-    width:100%;
-    text-align:left;
+.factory-card {
+    border-bottom:1px solid #eee;
+    padding:6px 0;
     margin-bottom:6px;
 }
 </style>
@@ -89,14 +89,14 @@ st.markdown(
 # =================================================
 st.markdown("### 브랜드 선택")
 
-btn1, btn2, _ = st.columns([1,1,6])
+b1, b2, _ = st.columns([1,1,6])
 
-with btn1:
+with b1:
     if st.button("전체 선택"):
         for b in brand_logos:
             st.session_state[f"brand_{b}"] = True
 
-with btn2:
+with b2:
     if st.button("전체 해제"):
         for b in brand_logos:
             st.session_state[f"brand_{b}"] = False
@@ -114,7 +114,7 @@ for i, (brand, logo) in enumerate(brand_logos.items()):
         )
 
 # =================================================
-# 공장 데이터 (원본 그대로)
+# 공장 데이터 (원본 유지)
 # =================================================
 factories = [
     (1,"Nike","IY.PIC Nikomas Nike, Adidas",-6.16276739755951,106.31671924330799,"130 min (135km)"),
@@ -167,21 +167,15 @@ col_map, col_list = st.columns([4,1])
 
 # ================= 지도 =================
 with col_map:
-    # 선택 공장 정보 박스
-    if st.session_state["selected_factory"]:
-        sf = st.session_state["selected_factory"]
-        st.info(
-            f"**선택 공장**\n\n- 브랜드: {sf[1]}\n- 공장명: {sf[2]}"
-        )
+    sf = st.session_state["selected_factory"]
 
     m = folium.Map(location=[-6.6,108.2], zoom_start=7)
 
-    # 일반 마커
+    # 기본 마커
     for f in visible_factories:
-        folium.Marker([f[3], f[4]], popup=f"{f[2]}").add_to(m)
+        folium.Marker([f[3], f[4]], popup=f[2]).add_to(m)
 
-    # 선택 공장 + 거리선
-    sf = st.session_state["selected_factory"]
+    # 선택 공장 기준 선 (선택된 경우만)
     if sf:
         folium.Marker(
             [sf[3], sf[4]],
@@ -190,14 +184,13 @@ with col_map:
         ).add_to(m)
 
         for f in visible_factories:
-            if f[0] == sf[0]:
-                continue
-            dist = haversine_km(sf[3], sf[4], f[3], f[4])
-            folium.PolyLine(
-                [[sf[3], sf[4]],[f[3], f[4]]],
-                tooltip=f"{dist} km",
-                color="blue"
-            ).add_to(m)
+            if f[0] != sf[0]:
+                folium.PolyLine(
+                    [[sf[3], sf[4]], [f[3], f[4]]],
+                    tooltip=f"{haversine_km(sf[3], sf[4], f[3], f[4])} km",
+                    color="blue",
+                    weight=2
+                ).add_to(m)
 
     st_folium(m, height=700, width=1400)
 
@@ -206,8 +199,30 @@ with col_list:
     st.markdown("### 공장 리스트")
     st.markdown('<div class="factory-list">', unsafe_allow_html=True)
 
+    sf = st.session_state["selected_factory"]
+
     for f in visible_factories:
-        if st.button(f"{f[1]} | {f[2]}", key=f"factory_{f[0]}"):
+        dist = (
+            haversine_km(sf[3], sf[4], f[3], f[4])
+            if sf else "-"
+        )
+
+        if st.button(
+            f"{f[1]} | {f[2]}",
+            key=f"factory_{f[0]}"
+        ):
             st.session_state["selected_factory"] = f
+
+        st.markdown(
+            f"""
+            <div class="factory-card">
+            <b>브랜드</b> : {f[1]}<br>
+            <b>공장명</b> : {f[2]}<br>
+            <b>거리</b> : {dist} km<br>
+            <b>소요시간</b> : {f[5]}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     st.markdown("</div>", unsafe_allow_html=True)
