@@ -26,8 +26,8 @@ brand_logos = {
 st.markdown(
     f"""
     <div style="display:flex; align-items:center; gap:20px;">
-        <img src="data:image/png;base64,{company_logo}" height="60">
-        <h1 style="margin:0;">Factory Distance Map</h1>
+        <img src="data:image/png;base64,{company_logo}" height="40">
+        <h1 style="margin:10px;">Factory Distance Map</h1>
     </div>
     """,
     unsafe_allow_html=True
