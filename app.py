@@ -84,7 +84,7 @@ div[data-testid="stCheckbox"] label span {
 h1, h2 = st.columns([1, 6])
 with h1:
     if os.path.exists("company_logo.png"):
-        st.image("company_logo.png", width=120)
+        st.image("company_logo.png", width=240)
 with h2:
     st.markdown("<div class='header-title'>Factory Distance Map</div>", unsafe_allow_html=True)
 
