@@ -201,8 +201,9 @@ with col_list:
         st.markdown("### 공장 리스트")
 
     with h2:
-        if st.button("새로 전체 보기"):
+        if st.button("🔄", help="전체 공장 다시 보기"):
             st.session_state["selected_factory"] = None
+
 
     with st.container(height=500):
         for f in visible_factories:
