@@ -66,7 +66,7 @@ st.markdown(
 )
 
 # =================================================
-# 브랜드 선택 + 전체 선택/해제
+# 브랜드 선택 + 전체 선택/해제 (로고 제거 버전)
 # =================================================
 st.markdown("### 브랜드 선택")
 
@@ -80,54 +80,16 @@ with b2:
         for b in brand_logos:
             st.session_state[f"brand_{b}"] = False
 
-# ---------- 브랜드 카드 스타일 ----------
-st.markdown("""
-<style>
-.brand-card {
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 12px 6px;
-    text-align: center;
-    height: 150px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-.brand-card img {
-    max-height: 60px;
-    object-fit: contain;
-    margin: 0 auto;
-}
-.brand-name {
-    font-size: 13px;
-    margin-top: 6px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ---------- 브랜드 카드 렌더 ----------
 brand_checks = {}
 cols = st.columns(5)
 
-for i, (brand, logo) in enumerate(brand_logos.items()):
+for i, brand in enumerate(brand_logos.keys()):
     with cols[i % 5]:
-        st.markdown("<div class='brand-card'>", unsafe_allow_html=True)
-
-        st.image(logo)
-
         brand_checks[brand] = st.checkbox(
             brand,
             key=f"brand_{brand}",
-            value=st.session_state.get(f"brand_{brand}", True),
-            label_visibility="collapsed"
+            value=st.session_state.get(f"brand_{brand}", True)
         )
-
-        st.markdown(
-            f"<div class='brand-name'>{brand}</div>",
-            unsafe_allow_html=True
-        )
-
-        st.markdown("</div>", unsafe_allow_html=True)
 
 # =================================================
 # 공장 데이터
