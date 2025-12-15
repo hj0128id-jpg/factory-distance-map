@@ -203,12 +203,13 @@ with col_list:
             if st.button(f"{f[1]} | {f[2]}", key=f"factory_{f[0]}"):
                 st.session_state["selected_factory"] = f
 
+    unsafe_allow_html=True
+)
+
 st.markdown(
     """
     <script>
-    window.addEventListener("load", function() {
-        window.scrollTo({ top: 0, behavior: "auto" });
-    });
+    window.scrollTo(0, 0);
     </script>
     """,
     unsafe_allow_html=True
