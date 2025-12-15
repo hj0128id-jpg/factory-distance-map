@@ -13,69 +13,77 @@ st.set_page_config(layout="wide", page_title="Factory Distance Map")
 # =================================================
 if "selected_factory" not in st.session_state:
     st.session_state["selected_factory"] = None
+if "search" not in st.session_state:
+    st.session_state["search"] = ""
 
 # =================================================
-# CSS (체크박스 글씨 포함 완전 수정)
+# CSS
 # =================================================
 st.markdown("""
 <style>
-/* 🔒 브라우저 다크모드 무시하고 무조건 라이트 */
-:root {
-    color-scheme: light !important;
-}
-/* ===============================
-   전체 화이트 테마
-=============================== */
+:root { color-scheme: light !important; }
+
 body, .stApp {
     background-color: white !important;
     color: black !important;
 }
 
-/* ===============================
-   브랜드 선택 영역
-=============================== */
-
-/* 브랜드 선택 제목 */
 .brand-title {
     color: black !important;
     font-weight: 700;
     margin-bottom: 6px;
 }
 
-/* 🔥 체크박스 텍스트 (Nike / Adidas) - 핵심 */
 div[data-testid="stCheckbox"] label span {
     color: black !important;
     font-weight: 600;
 }
 
-/* ===============================
-   오른쪽 공장 리스트
-=============================== */
+/* 오른쪽 리스트 */
 .factory-list {
-    background-color: #111111;
-    color: white !important;
+    background-color: #111;
+    color: white;
     padding: 12px;
     border-radius: 8px;
     height: 100%;
 }
 
-/* 리스트 제목 */
 .factory-list h3 {
-    color: white !important;
+    color: white;
 }
 
-/* 공장 버튼 */
-.factory-list button {
+.factory-btn {
     width: 100%;
     text-align: left;
-    color: white !important;
-    background-color: #1f1f1f;
+    padding: 8px;
+    border-radius: 6px;
     border: 1px solid #333;
     margin-bottom: 6px;
+    background-color: #1f1f1f;
+    color: white;
+    cursor: pointer;
 }
 
-.factory-list button:hover {
-    background-color: #333333;
+.factory-btn.selected {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+.factory-btn:hover {
+    background-color: #333;
+}
+
+/* 지도 하단 정보 카드 */
+.info-card {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 12px;
+    font-size: 16px;
+}
+.info-card b {
+    font-size: 18px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -96,7 +104,7 @@ def haversine_km(lat1, lon1, lat2, lon2):
     return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 # =================================================
-# Ducksan 공장
+# Ducksan
 # =================================================
 DUCKSAN = {
     "name": "Ducksan Factory",
@@ -108,7 +116,6 @@ DUCKSAN = {
 # 공장 데이터
 # =================================================
 factories = [
-    # Nike
     (1,"Nike","IY.PIC Nikomas Nike, Adidas",-6.16276739755951,106.31671924330799,"130 min (135km)"),
     (2,"Nike","IA.Adis",-6.198360928194161,106.45490204318438,"120 min (117km)"),
     (3,"Nike","JV Victory",-6.177442951766401,106.53013303741062,"130 min (121km)"),
@@ -119,24 +126,10 @@ factories = [
     (8,"Nike","TT Tekwang",-6.557840458416882,107.78753277093949,"76 min (80km)"),
     (9,"Nike","J2 Shoetown",-6.668837588760989,108.26586454850877,"124 min (150km)"),
     (10,"Nike","PM Sumber masanda",-6.867241347419877,108.98398073674508,"180 min (234km)"),
-    (11,"Nike","SCI Selalu Cinta",-7.3649526370117275,110.50302727705107,"317 min (442km)"),
-    (12,"Nike","RY.JJS Changshin",-7.074890966054376,108.07273203695073,"160 min (152km)"),
-    (13,"Nike","RY Pou Yuen",-6.803464029220425,107.22441150566885,"128 min (72km)"),
-    (14,"Nike","JX Pratama",-6.86320705203383,107.02668764100862,"173 min (90km)"),
 
-    # Adidas
     (15,"Adidas","PWI-1 Parkland",-6.18005569680193,106.34344218683786,"420 min (487km)"),
-    (16,"Adidas","IY.PIC Nikomas Nike, Adidas",-6.16276739755951,106.31671924330799,"130 min (135km)"),
-    (17,"Adidas","PRB Panarub",-6.170607657812733,106.6191471209852,"105 min (107km)"),
     (18,"Adidas","PBB Bintang Indo",-6.867770507966313,108.84263889750521,"167 min (207km)"),
-    (19,"Adidas","SHI Tah Sung Hung",-6.929972278573358,108.87605444522376,"167 min (220km)"),
-    (20,"Adidas","HWI Hwa Seung",-6.712188897782861,110.72403180338068,"360 min (455km)"),
-    (21,"Adidas","PWI-3 Parkland",-6.867770507966313,108.84263889750521,"312 min (416km)"),
-    (22,"Adidas","PWI-4 Parkland",-6.7142319309820175,111.38549046857136,"362 min (458km)"),
-    (23,"Adidas","HWI-2 Hwa Seung",-6.712771739449992,111.19681124717319,"420 min (500km)"),
-    (24,"Adidas","PWi-5 Parkland",-6.709008772441859,111.39741373178808,"447 min (522km)"),
-    (25,"Adidas","PGS Pouchen",-6.875398775012465,107.02241821336372,"180 min (93km)"),
-    (26,"Adidas","PGD.PGD2 Glostar Newbal, Adidas",-6.974318300905597,106.83196261494169,"153 min (138km)")
+    (21,"Adidas","PWI-3 Parkland",-6.867770507966313,108.84263889750521,"312 min (416km)")
 ]
 
 # =================================================
@@ -149,9 +142,13 @@ with c1:
 with c2:
     show_adidas = st.checkbox("Adidas", True)
 
+# 검색
+st.session_state.search = st.text_input("공장 검색", st.session_state.search)
+
 visible = [
     f for f in factories
-    if (f[1]=="Nike" and show_nike) or (f[1]=="Adidas" and show_adidas)
+    if ((f[1]=="Nike" and show_nike) or (f[1]=="Adidas" and show_adidas))
+    and st.session_state.search.lower() in f[2].lower()
 ]
 
 selected = st.session_state["selected_factory"]
@@ -165,7 +162,14 @@ col_map, col_list = st.columns([4, 1])
 # 지도
 # =================================================
 with col_map:
-    m = folium.Map(location=[-6.6,108.2], zoom_start=7)
+    if selected:
+        center = [selected[3], selected[4]]
+        zoom = 8
+    else:
+        center = [-6.6,108.2]
+        zoom = 7
+
+    m = folium.Map(location=center, zoom_start=zoom)
 
     # Ducksan
     folium.CircleMarker(
@@ -181,21 +185,36 @@ with col_map:
 
     for f in targets:
         fid, brand, name, lat, lon, eta = f
+        color = "red" if brand == "Nike" else "green"
         folium.Marker(
             [lat, lon],
             popup=f"<b>{name}</b><br>{brand}<br>{eta}",
-            icon=folium.Icon(color="red")
+            icon=folium.Icon(color=color)
         ).add_to(m)
 
     if selected:
-        fid, brand, name, lat, lon, eta = selected
         folium.PolyLine(
-            [[DUCKSAN["lat"], DUCKSAN["lon"]],[lat, lon]],
+            [[DUCKSAN["lat"], DUCKSAN["lon"]],[selected[3], selected[4]]],
             color="black",
             weight=4
         ).add_to(m)
 
-    st_folium(m, height=900, width=1100, key="map")
+    st_folium(m, height=800, key="map")
+
+    # 지도 하단 정보 카드
+    if selected:
+        dist = haversine_km(
+            DUCKSAN["lat"], DUCKSAN["lon"],
+            selected[3], selected[4]
+        )
+        st.markdown(f"""
+        <div class="info-card">
+            <b>{selected[2]}</b><br>
+            브랜드: {selected[1]}<br>
+            거리: {dist:.1f} km<br>
+            소요시간: {selected[5]}
+        </div>
+        """, unsafe_allow_html=True)
 
 # =================================================
 # 오른쪽 공장 리스트
@@ -208,16 +227,17 @@ with col_list:
         st.session_state["selected_factory"] = None
 
     for f in visible:
-        fid, brand, name, lat, lon, eta = f
-        if st.button(f"{brand} | {name}", key=f"btn_{fid}"):
-            st.session_state["selected_factory"] = f
-
-    if selected:
-        dist = haversine_km(
-            DUCKSAN["lat"], DUCKSAN["lon"],
-            selected[3], selected[4]
+        selected_cls = "selected" if selected == f else ""
+        st.markdown(
+            f"""
+            <div class="factory-btn {selected_cls}"
+                 onclick="window.location.reload()">
+                {f[1]} | {f[2]}
+            </div>
+            """,
+            unsafe_allow_html=True
         )
-        st.markdown(f"**거리:** {dist:.1f} km")
-        st.markdown(f"**소요시간:** {selected[5]}")
+        if st.button("select", key=f"btn_{f[0]}"):
+            st.session_state["selected_factory"] = f
 
     st.markdown("</div>", unsafe_allow_html=True)
