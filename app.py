@@ -193,12 +193,12 @@ with col_map:
         for f in visible_factories:
             folium.Marker([f[3], f[4]], popup=f[2]).add_to(m)
 
-    st_folium(m, height=500, width=1100)
+    st_folium(m, height=800, width=1400)
 
 # ================= 공장 리스트 =================
 with col_list:
     st.markdown("### 공장 리스트")
-    with st.container(height=700):
+    with st.container(height=800):
         for f in visible_factories:
             if st.button(f"{f[1]} | {f[2]}", key=f"factory_{f[0]}"):
                 st.session_state["selected_factory"] = f
