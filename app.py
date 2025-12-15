@@ -4,6 +4,7 @@ from streamlit_folium import st_folium
 from folium import Element
 import math
 import base64
+from collections import defaultdict
 
 # =================================================
 # 페이지 설정
@@ -11,13 +12,13 @@ import base64
 st.set_page_config(layout="wide", page_title="Factory Distance Map")
 
 # =================================================
-# 상태 초기화
+# 상태
 # =================================================
 if "selected_factory" not in st.session_state:
     st.session_state["selected_factory"] = None
 
 # =================================================
-# CSS (화이트 테마 강제)
+# CSS (화이트 테마 고정)
 # =================================================
 st.markdown("""
 <style>
@@ -34,6 +35,16 @@ body, .stApp {
     margin-bottom: 6px;
 }
 
+.brand-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.brand-row img {
+    height: 20px;
+}
+
 div[data-testid="stCheckbox"] label span {
     color: black !important;
     font-weight: 600;
@@ -44,7 +55,6 @@ div[data-testid="stCheckbox"] label span {
     color: white;
     padding: 12px;
     border-radius: 10px;
-    height: 100%;
 }
 
 .factory-list h3 {
@@ -67,7 +77,7 @@ div[data-testid="stCheckbox"] label span {
 """, unsafe_allow_html=True)
 
 # =================================================
-# 유틸 함수
+# 유틸
 # =================================================
 def img_b64(path):
     with open(path, "rb") as f:
@@ -99,7 +109,7 @@ st.markdown(
 )
 
 # =================================================
-# Ducksan 공장
+# Ducksan
 # =================================================
 DUCKSAN = {
     "name": "Ducksan Factory",
@@ -123,10 +133,9 @@ BRAND_LOGO = {
 }
 
 # =================================================
-# 공장 데이터 (전체)
+# 공장 데이터 (네가 준 전체)
 # =================================================
 factories = [
-    # Nike
     (1,"Nike","IY.PIC Nikomas Nike, Adidas",-6.16276739755951,106.31671924330799,"130 min (135km)"),
     (2,"Nike","IA.Adis",-6.198360928194161,106.45490204318438,"120 min (117km)"),
     (3,"Nike","JV Victory",-6.177442951766401,106.53013303741062,"130 min (121km)"),
@@ -141,8 +150,6 @@ factories = [
     (12,"Nike","RY.JJS Changshin",-7.074890966054376,108.07273203695073,"160 min (152km)"),
     (13,"Nike","RY Pou Yuen",-6.803464029220425,107.22441150566885,"128 min (72km)"),
     (14,"Nike","JX Pratama",-6.86320705203383,107.02668764100862,"173 min (90km)"),
-
-    # Adidas
     (15,"Adidas","PWI-1 Parkland",-6.18005569680193,106.34344218683786,"420 min (487km)"),
     (16,"Adidas","IY.PIC Nikomas Nike, Adidas",-6.16276739755951,106.31671924330799,"130 min (135km)"),
     (17,"Adidas","PRB Panarub",-6.170607657812733,106.6191471209852,"105 min (107km)"),
@@ -155,8 +162,6 @@ factories = [
     (24,"Adidas","PWi-5 Parkland",-6.709008772441859,111.39741373178808,"447 min (522km)"),
     (25,"Adidas","PGS Pouchen",-6.875398775012465,107.02241821336372,"180 min (93km)"),
     (26,"Adidas","PGD.PGD2 Glostar Newbal, Adidas",-6.974318300905597,106.83196261494169,"153 min (138km)"),
-
-    # Other brands
     (27,"New Balance","PWI-2 Parkland",-6.164065615736655,106.34362393191581,"127 min (134km)"),
     (28,"New Balance","MPI Metro Pearl",-6.553123695397186,107.43167326062274,"57 min (51km)"),
     (29,"New Balance","PGD.PGD2 Glostar Newbal, Adidas",-6.974318300905597,106.83196261494169,"153 min (138km)"),
@@ -170,54 +175,58 @@ factories = [
 ]
 
 # =================================================
-# 브랜드 선택
+# 🔥 브랜드 선택 (전체 + 로고)
 # =================================================
 st.markdown("<div class='brand-title'>브랜드 선택</div>", unsafe_allow_html=True)
-c1, c2 = st.columns(2)
-with c1:
-    show_nike = st.checkbox("Nike", True)
-with c2:
-    show_adidas = st.checkbox("Adidas", True)
 
-visible = [
-    f for f in factories
-    if (f[1]=="Nike" and show_nike) or (f[1]=="Adidas" and show_adidas)
-]
+brands = sorted(set(f[1] for f in factories))
+brand_state = {}
 
-selected = st.session_state["selected_factory"]
+cols = st.columns(4)
+for i, brand in enumerate(brands):
+    with cols[i % 4]:
+        logo = BRAND_LOGO.get(brand)
+        if logo:
+            st.markdown(
+                f"""
+                <div class="brand-row">
+                    <img src="data:image/png;base64,{img_b64(logo)}">
+                    <span>{brand}</span>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        brand_state[brand] = st.checkbox(brand, True, key=f"chk_{brand}")
+
+visible = [f for f in factories if brand_state.get(f[1], False)]
 
 # =================================================
 # 레이아웃
 # =================================================
-col_map, col_list = st.columns([4, 1])
+col_map, col_list = st.columns([4,1])
 
 # =================================================
-# 지도
+# 지도 (이전과 동일)
 # =================================================
 with col_map:
-    m = folium.Map(location=[-6.6,108.2], zoom_start=7, control_scale=False)
+    m = folium.Map(location=[-6.6,108.2], zoom_start=7)
 
     folium.CircleMarker(
         [DUCKSAN["lat"], DUCKSAN["lon"]],
         radius=8,
         color="blue",
         fill=True,
-        fill_color="blue",
-        popup=DUCKSAN["name"]
+        fill_color="blue"
     ).add_to(m)
 
-    targets = [selected] if selected else visible
+    targets = [st.session_state["selected_factory"]] if st.session_state["selected_factory"] else visible
 
     for f in targets:
         _, brand, name, lat, lon, eta = f
-        folium.Marker(
-            [lat, lon],
-            popup=f"<b>{name}</b><br>{brand}<br>{eta}",
-            icon=folium.Icon(color="red")
-        ).add_to(m)
+        folium.Marker([lat, lon], popup=f"{name}<br>{brand}<br>{eta}").add_to(m)
 
-    if selected:
-        _, brand, name, lat, lon, eta = selected
+    if st.session_state["selected_factory"]:
+        _, brand, name, lat, lon, eta = st.session_state["selected_factory"]
         dist = haversine_km(DUCKSAN["lat"], DUCKSAN["lon"], lat, lon)
 
         folium.PolyLine(
@@ -230,28 +239,25 @@ with col_map:
         if brand in BRAND_LOGO:
             logo_html = f"<img src='data:image/png;base64,{img_b64(BRAND_LOGO[brand])}' height='28'><br>"
 
-        info_html = f"""
+        m.get_root().html.add_child(Element(f"""
         <div style="
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 9999;
-            background: rgba(255,255,255,0.96);
-            padding: 14px 18px;
-            border-radius: 12px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.18);
-            min-width: 260px;
+            background: white;
+            padding: 14px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         ">
             {logo_html}
-            <b style="font-size:16px;">{name}</b><br>
+            <b>{name}</b><br>
             브랜드: {brand}<br>
             거리: {dist:.1f} km<br>
             소요시간: {eta}
         </div>
-        """
-        m.get_root().html.add_child(Element(info_html))
+        """))
 
-    st_folium(m, height=700, width=1400, key="map")
+    st_folium(m, height=700, width=1400)
 
 # =================================================
 # 오른쪽 공장 리스트
