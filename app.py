@@ -48,14 +48,21 @@ brand_logos = {
 # =================================================
 # 헤더
 # =================================================
+# 우리 회사 로고
 st.markdown(
     f"""
-    <div style="display:flex;align-items:center;gap:20px;margin-bottom:20px;">
+    <div style="margin-bottom:10px;">
         <img src="data:image/png;base64,{company_logo}" height="60">
-        <h1 style="margin:0;">Factory Distance Map</h1>
     </div>
     """,
     unsafe_allow_html=True
+)
+
+# 제목
+st.markdown(
+    "<h1 style='margin-top:0; margin-bottom:20px;'>Factory Distance Map</h1>",
+    unsafe_allow_html=True
+
 )
 
 # =================================================
