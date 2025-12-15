@@ -103,7 +103,7 @@ div[data-testid="stCheckbox"] label span {
 # 회사 로고 (제목 위)
 if LOGO_COMPANY:
     st.markdown(
-        f"<img src='data:image/png;base64,{LOGO_COMPANY}' width='180' style='margin-bottom:10px;'>",
+        f"<img src='data:image/png;base64,{LOGO_COMPANY}' width='300' style='margin-bottom:25px;'>",
         unsafe_allow_html=True
     )
 
