@@ -19,7 +19,7 @@ def img_b64(path):
         return base64.b64encode(f.read()).decode()
 
 # =================================================
-# 🔴 우리 공장 (고정)
+# 🔴 우리 공장 (고정 좌표)
 # =================================================
 OUR_FACTORY = (
     "OUR",
@@ -113,7 +113,7 @@ col_map, col_list = st.columns([4,1])
 with col_map:
     sf = st.session_state["selected_factory"]
 
-    # 지도 위 정보 (선택 시)
+    # 지도 위 정보
     if sf:
         st.info(
             f"""
@@ -126,30 +126,31 @@ with col_map:
 
     m = folium.Map(location=[-6.6,108.2], zoom_start=7)
 
-    # 🔵 우리 공장 마커
+    # 🟢 우리 공장은 항상 표시
     folium.Marker(
         [OUR_FACTORY[2], OUR_FACTORY[3]],
         popup=OUR_FACTORY[1],
         icon=folium.Icon(color="green", icon="home")
     ).add_to(m)
 
-    # 일반 공장 마커
-    for f in visible_factories:
-        folium.Marker([f[3], f[4]], popup=f[2]).add_to(m)
-
-    # 🔴 선택 공장 + 우리 공장 연결선 (단 하나)
     if sf:
+        # 🔴 선택한 공장만 표시
         folium.Marker(
             [sf[3], sf[4]],
             icon=folium.Icon(color="red", icon="star"),
             popup=sf[2]
         ).add_to(m)
 
+        # 🔵 우리 공장 ↔ 선택 공장 선 (단 하나)
         folium.PolyLine(
             [[OUR_FACTORY[2], OUR_FACTORY[3]], [sf[3], sf[4]]],
             color="blue",
             weight=3
         ).add_to(m)
+    else:
+        # ❗ 선택 안 했을 때만 전체 공장 표시
+        for f in visible_factories:
+            folium.Marker([f[3], f[4]], popup=f[2]).add_to(m)
 
     st_folium(m, height=700, width=1400)
 
