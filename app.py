@@ -18,6 +18,9 @@ def img_b64(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
+def select_factory(factory):
+    st.session_state["selected_factory"] = factory
+
 # =================================================
 # 🔴 우리 공장 (고정 좌표)
 # =================================================
