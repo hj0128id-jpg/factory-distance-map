@@ -55,21 +55,11 @@ body, .stApp {
     text-align: left;
     margin-bottom: 6px;
 }
-
-.brand-box {
-    display: flex;
-    gap: 30px;
-    flex-wrap: wrap;
-    margin-bottom: 15px;
-}
-.brand-item {
-    text-align: center;
-}
 </style>
 """, unsafe_allow_html=True)
 
 # =================================================
-# 상단 헤더 (회사 로고 + 제목)
+# 상단 헤더
 # =================================================
 st.markdown(
     f"""
@@ -82,7 +72,7 @@ st.markdown(
 )
 
 # =================================================
-# 브랜드 선택 (로고 + 체크박스)
+# 브랜드 선택
 # =================================================
 st.markdown("### 브랜드 선택")
 
@@ -95,7 +85,7 @@ for i, (brand, logo) in enumerate(brand_logos.items()):
         brand_checks[brand] = st.checkbox(brand, value=True)
 
 # =================================================
-# 공장 데이터 (데이터만 있음)
+# 공장 데이터
 # =================================================
 factories = [
     (1,"Nike","IY.PIC Nikomas Nike, Adidas",-6.16276739755951,106.31671924330799,"130 min (135km)"),
@@ -141,7 +131,7 @@ factories = [
 visible_factories = [f for f in factories if brand_checks.get(f[1], False)]
 
 # =================================================
-# 메인 레이아웃
+# 메인 레이아웃 (✔️ 지도 | 공장 리스트 같은 행)
 # =================================================
 col_map, col_list = st.columns([4, 1])
 
@@ -155,10 +145,10 @@ with col_map:
         ).add_to(m)
     st_folium(m, height=700, width=1400)
 
-# ================= 공장 리스트 =================
+# ================= 공장 리스트 (✔️ 지도 우측 고정) =================
 with col_list:
     st.markdown("### 공장 리스트")
     st.markdown('<div class="factory-list">', unsafe_allow_html=True)
     for f in visible_factories:
-        st.button(f"{f[1]} | {f[2]}")
+        st.button(f"{f[1]} | {f[2]}", key=f"factory_{f[0]}")
     st.markdown("</div>", unsafe_allow_html=True)
