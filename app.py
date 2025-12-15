@@ -51,7 +51,6 @@ brand_logos = {
 # =================================================
 # 헤더
 # =================================================
-# 우리 회사 로고
 st.markdown(
     f"""
     <div style="margin-bottom:10px;">
@@ -61,15 +60,13 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 제목
 st.markdown(
     "<h1 style='margin-top:0; margin-bottom:20px;'>Factory Distance Map</h1>",
     unsafe_allow_html=True
-
 )
 
 # =================================================
-# 브랜드 선택 + 전체 선택/해제 (✔ 정렬 수정)
+# 브랜드 선택 + 전체 선택/해제
 # =================================================
 st.markdown("### 브랜드 선택")
 
@@ -83,22 +80,57 @@ with b2:
         for b in brand_logos:
             st.session_state[f"brand_{b}"] = False
 
+# ---------- 브랜드 카드 스타일 ----------
+st.markdown("""
+<style>
+.brand-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px 6px;
+    text-align: center;
+    height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.brand-card img {
+    max-height: 60px;
+    object-fit: contain;
+    margin: 0 auto;
+}
+.brand-name {
+    font-size: 13px;
+    margin-top: 6px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ---------- 브랜드 카드 렌더 ----------
 brand_checks = {}
 cols = st.columns(5)
 
 for i, (brand, logo) in enumerate(brand_logos.items()):
     with cols[i % 5]:
-        st.markdown("<div style='text-align:center;'>", unsafe_allow_html=True)
-        st.image(logo, width=80)
+        st.markdown("<div class='brand-card'>", unsafe_allow_html=True)
+
+        st.image(logo)
+
         brand_checks[brand] = st.checkbox(
             brand,
             key=f"brand_{brand}",
-            value=st.session_state.get(f"brand_{brand}", True)
+            value=st.session_state.get(f"brand_{brand}", True),
+            label_visibility="collapsed"
         )
+
+        st.markdown(
+            f"<div class='brand-name'>{brand}</div>",
+            unsafe_allow_html=True
+        )
+
         st.markdown("</div>", unsafe_allow_html=True)
 
 # =================================================
-# 공장 데이터 (그대로)
+# 공장 데이터
 # =================================================
 factories = [
     (1,"Nike","IY.PIC Nikomas Nike, Adidas",-6.16276739755951,106.31671924330799,"130 min (135km)"),
@@ -115,31 +147,11 @@ factories = [
     (12,"Nike","RY.JJS Changshin",-7.074890966054376,108.07273203695073,"160 min (152km)"),
     (13,"Nike","RY Pou Yuen",-6.803464029220425,107.22441150566885,"128 min (72km)"),
     (14,"Nike","JX Pratama",-6.86320705203383,107.02668764100862,"173 min (90km)"),
-
     (15,"Adidas","PWI-1 Parkland",-6.18005569680193,106.34344218683786,"420 min (487km)"),
-    (16,"Adidas","IY.PIC Nikomas Nike, Adidas",-6.16276739755951,106.31671924330799,"130 min (135km)"),
-    (17,"Adidas","PRB Panarub",-6.170607657812733,106.6191471209852,"105 min (107km)"),
-    (18,"Adidas","PBB Bintang Indo",-6.867770507966313,108.84263889750521,"167 min (207km)"),
-    (19,"Adidas","SHI Tah Sung Hung",-6.929972278573358,108.87605444522376,"167 min (220km)"),
-    (20,"Adidas","HWI Hwa Seung",-6.712188897782861,110.72403180338068,"360 min (455km)"),
-    (21,"Adidas","PWI-3 Parkland",-6.867770507966313,108.84263889750521,"312 min (416km)"),
-    (22,"Adidas","PWI-4 Parkland",-6.7142319309820175,111.38549046857136,"362 min (458km)"),
-    (23,"Adidas","HWI-2 Hwa Seung",-6.712771739449992,111.19681124717319,"420 min (500km)"),
-    (24,"Adidas","PWi-5 Parkland",-6.709008772441859,111.39741373178808,"447 min (522km)"),
-    (25,"Adidas","PGS Pouchen",-6.875398775012465,107.02241821336372,"180 min (93km)"),
-    (26,"Adidas","PGD Glostar",-6.974318300905597,106.83196261494169,"153 min (138km)"),
-
     (27,"New Balance","PWI-2 Parkland",-6.164065615736655,106.34362393191581,"127 min (134km)"),
-    (28,"New Balance","MPI Metro Pearl",-6.553123695397186,107.43167326062274,"57 min (51km)"),
-    (29,"New Balance","PGD2 Glostar",-6.974318300905597,106.83196261494169,"153 min (138km)"),
-
     (30,"Puma","IDM Diamond",-6.760451512559341,108.26909332164612,"124 min (151km)"),
     (31,"Under Armour","Dean Shoes",-6.391000160605475,107.39562888401743,"43 min (29km)"),
-    (32,"Under Armour","Long Rich",-6.8755937402321985,108.775905329925,"150 min (200km)"),
-    (33,"Converse","SJI Shoenary",-7.369617174917486,110.22038960678333,"350 min (460km)"),
-    (34,"Decathlon","DPS-2 Dwi Prima",-7.398359508521098,111.50982327782442,"398 min (567km)"),
-    (35,"Yonex","DPS Dwi Prima",-7.505210694143256,111.65093697468592,"405 min (591km)"),
-    (36,"Sperry","WWW Young Tree",-7.565685915234356,110.76484773866882,"360 min (482km)")
+    (33,"Converse","SJI Shoenary",-7.369617174917486,110.22038960678333,"350 min (460km)")
 ]
 
 visible_factories = [f for f in factories if brand_checks.get(f[1], False)]
@@ -153,7 +165,6 @@ col_map, col_list = st.columns([4,1])
 with col_map:
     sf = st.session_state["selected_factory"]
 
-    # ✔ 지도 위 정보 박스 (로고 포함)
     if sf:
         logo_b64 = img_b64(brand_logos[sf[1]])
         st.markdown(
@@ -186,12 +197,6 @@ with col_map:
             icon=folium.Icon(color="red", icon="star"),
             popup=sf[2]
         ).add_to(m)
-
-        folium.PolyLine(
-            [[OUR_FACTORY[2], OUR_FACTORY[3]], [sf[3], sf[4]]],
-            color="blue",
-            weight=3
-        ).add_to(m)
     else:
         for f in visible_factories:
             folium.Marker([f[3], f[4]], popup=f[2]).add_to(m)
@@ -210,12 +215,8 @@ with col_list:
                 args=(f,)
             )
 
-
-    unsafe_allow_html=True
-
-
+# 스크롤 항상 맨 위
 st.markdown(
     "<script>window.scrollTo(0, 0);</script>",
     unsafe_allow_html=True
 )
-
