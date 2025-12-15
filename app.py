@@ -154,7 +154,7 @@ col_map, col_list = st.columns([4, 1])
 with col_map:
     if selected:
         center = [selected[3], selected[4]]
-        zoom = 4
+        zoom = 8
     else:
         center = [-6.6, 108.2]
         zoom = 7
@@ -218,8 +218,8 @@ with col_map:
 
     st_folium(
         m,
-        height=1050,
-        width=1400,
+        height=950,
+        width=1200,
         key="map"
     )
 
