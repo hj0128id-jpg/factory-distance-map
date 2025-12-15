@@ -218,8 +218,8 @@ with col_map:
 
     st_folium(
         m,
-        height=850,
-        width=1100,
+        height=1050,
+        width=1400,
         key="map"
     )
 
