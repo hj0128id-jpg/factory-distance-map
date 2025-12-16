@@ -24,8 +24,20 @@ def select_factory(factory):
 def reset_view():
     st.session_state["selected_factory"] = None
 
+def factory_popup_html(brand, factory_name):
+    logo_b64 = img_b64(brand_logos[brand])
+    return f"""
+    <div style="width:160px;text-align:center;font-family:Arial,sans-serif;">
+        <img src="data:image/png;base64,{logo_b64}"
+             style="width:50px;margin-bottom:6px;" />
+        <div style="font-size:11px;font-weight:600;line-height:1.2;color:#333;">
+            {factory_name}
+        </div>
+    </div>
+    """
+
 # =================================================
-# 🔴 우리 공장 (고정 좌표)
+# 🔴 우리 공장
 # =================================================
 OUR_FACTORY = (
     "OUR",
@@ -107,7 +119,7 @@ for i, brand in enumerate(brand_logos.keys()):
 # 공장 데이터
 # =================================================
 factories = [
-    (1,"Nike","IY.PIC Nikomas",-6.16276739755951,106.31671924330799,"130 min (135km)"),
+    (1,"Nike","IY.PIC Nikomas Nike, Adidas",-6.16276739755951,106.31671924330799,"130 min (135km)"),
     (2,"Nike","IA.Adis",-6.198360928194161,106.45490204318438,"120 min (117km)"),
     (3,"Nike","JV Victory",-6.177442951766401,106.53013303741062,"130 min (121km)"),
     (4,"Nike","RH Ching Luh",-6.174073195725205,106.53745401501386,"130 min (113km)"),
@@ -123,7 +135,7 @@ factories = [
     (14,"Nike","JX Pratama",-6.86320705203383,107.02668764100862,"173 min (90km)"),
 
     (15,"Adidas","PWI-1 Parkland",-6.18005569680193,106.34344218683786,"420 min (487km)"),
-    (16,"Adidas","IY.PIC Nikomas",-6.16276739755951,106.31671924330799,"130 min (135km)"),
+    (16,"Adidas","IY.PIC Nikomas Nike, Adidas",-6.16276739755951,106.31671924330799,"130 min (135km)"),
     (17,"Adidas","PRB Panarub",-6.170607657812733,106.6191471209852,"105 min (107km)"),
     (18,"Adidas","PBB Bintang Indo",-6.867770507966313,108.84263889750521,"167 min (207km)"),
     (19,"Adidas","SHI Tah Sung Hung",-6.929972278573358,108.87605444522376,"167 min (220km)"),
@@ -159,27 +171,9 @@ col_map, col_list = st.columns([4,1])
 with col_map:
     sf = st.session_state["selected_factory"]
 
-    if sf:
-        logo_b64 = img_b64(brand_logos[sf[1]])
-        st.markdown(
-            f"""
-            <div style="display:flex;align-items:center;gap:14px;
-                        padding:10px;border:1px solid #ddd;border-radius:8px;
-                        margin-bottom:10px;">
-                <img src="data:image/png;base64,{logo_b64}" width="60">
-                <div>
-                    <b>브랜드</b> : {sf[1]}<br>
-                    <b>공장명</b> : {sf[2]}<br>
-                    <b>소요시간</b> : {sf[5]}
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
     m = folium.Map(location=[-6.6,108.2], zoom_start=7)
 
-    # 우리 공장
+    # 우리 공장 (기존 그대로)
     folium.Marker(
         [OUR_FACTORY[2], OUR_FACTORY[3]],
         popup=OUR_FACTORY[1],
@@ -187,18 +181,24 @@ with col_map:
     ).add_to(m)
 
     if sf:
-        # 선택 공장
+        # 선택 공장 popup만 변경
         folium.Marker(
             [sf[3], sf[4]],
-            popup=sf[2],
+            popup=folium.Popup(
+                factory_popup_html(sf[1], sf[2]),
+                max_width=200
+            ),
             icon=folium.Icon(color="red", icon="star", prefix="fa")
         ).add_to(m)
     else:
-        # 전체 공장
+        # 전체 공장 popup만 변경
         for f in visible_factories:
             folium.Marker(
                 [f[3], f[4]],
-                popup=f[2],
+                popup=folium.Popup(
+                    factory_popup_html(f[1], f[2]),
+                    max_width=200
+                ),
                 icon=folium.Icon(color="blue", icon="industry", prefix="fa")
             ).add_to(m)
 
