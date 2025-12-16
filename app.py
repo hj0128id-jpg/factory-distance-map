@@ -185,6 +185,7 @@ with col_map:
     folium.Marker(
         [OUR_FACTORY[2], OUR_FACTORY[3]],
         popup=OUR_FACTORY[1]
+        icon=folium.Icon(color=green)
     ).add_to(m)
 
     if sf:
