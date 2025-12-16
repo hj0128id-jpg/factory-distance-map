@@ -159,6 +159,7 @@ col_map, col_list = st.columns([4,1])
 with col_map:
     sf = st.session_state["selected_factory"]
 
+    # 선택 공장 정보 박스
     if sf:
         logo_b64 = img_b64(brand_logos[sf[1]])
         st.markdown(
@@ -177,26 +178,27 @@ with col_map:
             unsafe_allow_html=True
         )
 
+    # 🔹 지도 생성
     m = folium.Map(location=[-6.6,108.2], zoom_start=7)
 
+    # ✅ 우리 공장 — 항상 표시 (중요!)
     folium.Marker(
         [OUR_FACTORY[2], OUR_FACTORY[3]],
-        popup=OUR_FACTORY[1],
-        icon=folium.Icon(color="green", icon="home")
-    )
-
+        popup=OUR_FACTORY[1]
+    ).add_to(m)
 
     if sf:
+        # 선택 공장만 표시
         folium.Marker(
             [sf[3], sf[4]],
-            icon=folium.Icon(color="red", icon="star"),
             popup=sf[2]
         ).add_to(m)
     else:
+        # 선택 없을 때 전체 공장
         for f in visible_factories:
             folium.Marker([f[3], f[4]], popup=f[2]).add_to(m)
 
-    st_folium(m, height=600, width=1400)
+    st_folium(m, height=800, width=1400)
 
 # ================= 공장 리스트 =================
 with col_list:
