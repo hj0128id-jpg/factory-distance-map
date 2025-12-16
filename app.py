@@ -199,7 +199,7 @@ with col_map:
         for f in visible_factories:
             folium.Marker([f[3], f[4]], popup=f[2]).add_to(m)
 
-    st_folium(m, height=800, width=1400)
+    st_folium(m, height=600, width=1400)
 
 # ================= 공장 리스트 =================
 with col_list:
