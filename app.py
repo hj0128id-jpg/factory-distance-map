@@ -82,7 +82,7 @@ button {
 # =================================================
 st.markdown("### 브랜드 선택")
 
-b1, b2, _ = st.columns([4, 4, 32])
+b1, b2, _ = st.columns([4, 4, 40])
 with b1:
     if st.button("전체 선택"):
         for b in brand_logos:
