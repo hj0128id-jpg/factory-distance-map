@@ -65,7 +65,7 @@ st.markdown(
 )
 
 st.markdown(
-    "<h1 style='margin-top:0; margin-bottom:20px;'>Factory Distance Map</h1>",
+    "<h1 style='margin-top:0; margin-bottom:8px;'>Factory Distance Map</h1>",
     unsafe_allow_html=True
 )
 st.markdown("""
