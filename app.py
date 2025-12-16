@@ -184,7 +184,7 @@ with col_map:
     # ✅ 우리 공장 — 항상 표시 (중요!)
     folium.Marker(
         [OUR_FACTORY[2], OUR_FACTORY[3]],
-        popup=OUR_FACTORY[1]
+        popup=OUR_FACTORY[1],
         icon=folium.Icon(color=green)
     ).add_to(m)
 
