@@ -179,11 +179,11 @@ with col_map:
 
     m = folium.Map(location=[-6.6,108.2], zoom_start=7)
 
-folium.Marker(
-    [OUR_FACTORY[2], OUR_FACTORY[3]],
-    popup=OUR_FACTORY[1],
-    icon=folium.Icon(color="green", icon="home")
-)
+    folium.Marker(
+        [OUR_FACTORY[2], OUR_FACTORY[3]],
+        popup=OUR_FACTORY[1],
+        icon=folium.Icon(color="green", icon="home")
+    )
 
 
     if sf:
