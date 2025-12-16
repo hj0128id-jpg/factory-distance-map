@@ -66,6 +66,7 @@ st.markdown(
 
 st.markdown(
     "<h1 style='margin-top:0; margin-bottom:20px;'>Factory Distance Map</h1>",
+    "<h2 style='margin-top:0; margin-bottom:10px;'>아이콘이 깨질경우 페이지 새로고침 바랍니다</h2>",
     unsafe_allow_html=True
 )
 st.markdown("""
